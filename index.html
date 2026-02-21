@@ -1,18 +1,708 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="ko">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <title>my-first-website</title>
-  <LINK href="styles.css" rel="stylesheet" type="text/css">
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LG CNS AI BD 서비스 | 제약/바이오 영업 지원</title>
+  <style>
+    :root {
+      --lg-red: #a50034;
+      --lg-dark: #1a1a2e;
+      --lg-navy: #16213e;
+      --lg-blue: #0f3460;
+      --accent: #e94560;
+      --bg: #f5f6fa;
+      --card: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+      --success: #38a169;
+    }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      background: linear-gradient(135deg, var(--lg-dark) 0%, var(--lg-blue) 100%);
+      color: white;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      background: var(--lg-red);
+      color: white;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    .logo-text {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    .header-badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white;
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    /* ── 레이아웃 ── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero h1 {
+      font-size: 1.8rem;
+      color: var(--lg-dark);
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .hero p {
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    /* ── 탭 ── */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 0.6rem 1.25rem;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text-light);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--lg-red);
+      color: var(--lg-red);
+    }
+
+    .tab-btn.active {
+      background: var(--lg-red);
+      border-color: var(--lg-red);
+      color: white;
+    }
+
+    /* ── 탭 패널 ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── 카드 ── */
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--lg-dark);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title span { font-size: 1.2rem; }
+
+    /* ── 폼 요소 ── */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--lg-red);
+      background: white;
+    }
+
+    textarea { min-height: 80px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* ── 버튼 ── */
+    .btn-primary {
+      background: var(--lg-red);
+      color: white;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      background: #8a0029;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(165,0,52,0.3);
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── 결과 출력 ── */
+    .result-container {
+      display: none;
+      margin-top: 1.25rem;
+    }
+
+    .result-container.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .result-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .streaming-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1s ease-in-out infinite;
+      display: none;
+    }
+
+    .streaming-dot.active { display: inline-block; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .result-box {
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre-wrap;
+      max-height: 600px;
+      overflow-y: auto;
+      min-height: 120px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text-light);
+      padding: 0.35rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--lg-red);
+      color: var(--lg-red);
+    }
+
+    /* ── 홈 화면 기능 카드 ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .feature-card:hover {
+      border-color: var(--lg-red);
+      box-shadow: 0 4px 16px rgba(165,0,52,0.12);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--lg-dark);
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-desc {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    /* ── 로딩 스피너 ── */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 스크롤바 ── */
+    .result-box::-webkit-scrollbar { width: 6px; }
+    .result-box::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .result-box::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  </style>
+</head>
 <body>
 
-<img src="https://octodex.github.com/images/daftpunktocat-thomas.gif" id="octocat" alt="octocat-gif" />
+<header>
+  <div class="logo">
+    <div class="logo-badge">LG CNS</div>
+    <div class="logo-text">화학/전지사업부 · AI BD 서비스</div>
+  </div>
+  <div class="header-badge">제약/바이오 영업 지원 플랫폼</div>
+</header>
 
-<!-- Change this code here by copy and pasting your template on line 15 -->
-<p>Welcome to your first GitHub Pages website!</p>
+<div class="container">
+  <div class="hero">
+    <h1>🧬 AI Business Development 지원 서비스</h1>
+    <p>Claude AI 기반 · 제약/바이오 영업 전략 수립부터 제안서 작성까지 실시간 지원</p>
+  </div>
+
+  <!-- 탭 메뉴 -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('home')">
+      🏠 홈
+    </button>
+    <button class="tab-btn" onclick="switchTab('analyze')">
+      🔍 기업 분석
+    </button>
+    <button class="tab-btn" onclick="switchTab('meeting')">
+      📋 미팅 브리핑
+    </button>
+    <button class="tab-btn" onclick="switchTab('proposal')">
+      📄 제안서 초안
+    </button>
+    <button class="tab-btn" onclick="switchTab('coaching')">
+      💬 영업 코칭
+    </button>
+  </div>
+
+  <!-- 홈 탭 -->
+  <div id="tab-home" class="tab-panel active">
+    <div class="card">
+      <div class="card-title"><span>🎯</span> 서비스 소개</div>
+      <p style="color: var(--text-light); font-size: 0.9rem; line-height: 1.7;">
+        LG CNS 화학/전지사업부 영업팀을 위한 AI 기반 BD(Business Development) 지원 플랫폼입니다.<br>
+        Claude AI가 제약/바이오 산업 전문 지식을 바탕으로 영업 전 과정을 지원합니다.
+      </p>
+      <div class="feature-grid">
+        <div class="feature-card" onclick="switchTab('analyze')">
+          <div class="feature-icon">🔍</div>
+          <div class="feature-name">기업 심층 분석</div>
+          <div class="feature-desc">타겟 제약/바이오 기업의 디지털 현황, Pain Point, LG CNS 기회 영역 분석</div>
+        </div>
+        <div class="feature-card" onclick="switchTab('meeting')">
+          <div class="feature-icon">📋</div>
+          <div class="feature-name">미팅 브리핑 생성</div>
+          <div class="feature-desc">영업 미팅 전 맞춤형 브리핑 자료 · 예상 Q&amp;A · 핵심 메시지 자동 생성</div>
+        </div>
+        <div class="feature-card" onclick="switchTab('proposal')">
+          <div class="feature-icon">📄</div>
+          <div class="feature-name">제안서 초안 작성</div>
+          <div class="feature-desc">고객 요구사항 기반 LG CNS 솔루션 제안서 초안 · ROI 분석 포함</div>
+        </div>
+        <div class="feature-card" onclick="switchTab('coaching')">
+          <div class="feature-icon">💬</div>
+          <div class="feature-name">실시간 영업 코칭</div>
+          <div class="feature-desc">고객 발언 분석 · 최적 대응 메시지 · 영업 대화 전략 즉시 제공</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기업 분석 탭 -->
+  <div id="tab-analyze" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span>🔍</span> 제약/바이오 기업 심층 분석</div>
+      <div class="form-group">
+        <label>기업명 *</label>
+        <input type="text" id="analyze-company" placeholder="예: 유한양행, 셀트리온, 한미약품, Pfizer Korea" />
+      </div>
+      <div class="form-group">
+        <label>추가 정보 (선택)</label>
+        <textarea id="analyze-info" placeholder="알려진 현황, 최근 이슈, 특이사항 등을 입력하면 더 정확한 분석이 가능합니다.&#10;예: 최근 FDA 허가 신청, 공장 자동화 투자 계획 발표 등"></textarea>
+      </div>
+      <button class="btn-primary" id="btn-analyze" onclick="runAnalysis()">
+        <span>🔍</span> 기업 분석 시작
+      </button>
+      <div class="result-container" id="result-analyze">
+        <div class="result-header">
+          <div class="result-label">
+            <div class="streaming-dot" id="dot-analyze"></div>
+            분석 결과
+          </div>
+          <button class="copy-btn" onclick="copyResult('box-analyze')">📋 복사</button>
+        </div>
+        <div class="result-box" id="box-analyze"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 미팅 브리핑 탭 -->
+  <div id="tab-meeting" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span>📋</span> 영업 미팅 브리핑 자료 생성</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>고객사명 *</label>
+          <input type="text" id="meeting-company" placeholder="예: 대웅제약" />
+        </div>
+        <div class="form-group">
+          <label>참석자 정보</label>
+          <input type="text" id="meeting-attendees" placeholder="예: IT본부장, CIO, 구매팀장" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>미팅 목적 *</label>
+        <textarea id="meeting-purpose" placeholder="예: MES 시스템 교체 사업 제안 · ERP 고도화 PoC 협의 · 클라우드 전환 초기 상담" style="min-height: 60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>알려진 고객 이슈/관심사</label>
+        <textarea id="meeting-issues" placeholder="예: 규제 대응(KGMP, FDA) 어려움, 노후 시스템 통합 이슈, 데이터 관리 비효율"></textarea>
+      </div>
+      <button class="btn-primary" id="btn-meeting" onclick="runMeetingBrief()">
+        <span>📋</span> 브리핑 자료 생성
+      </button>
+      <div class="result-container" id="result-meeting">
+        <div class="result-header">
+          <div class="result-label">
+            <div class="streaming-dot" id="dot-meeting"></div>
+            미팅 브리핑 자료
+          </div>
+          <button class="copy-btn" onclick="copyResult('box-meeting')">📋 복사</button>
+        </div>
+        <div class="result-box" id="box-meeting"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 제안서 탭 -->
+  <div id="tab-proposal" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span>📄</span> 맞춤형 제안서 초안 작성</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>고객사명 *</label>
+          <input type="text" id="proposal-company" placeholder="예: 종근당" />
+        </div>
+        <div class="form-group">
+          <label>예산 규모</label>
+          <input type="text" id="proposal-budget" placeholder="예: 30~50억 원, 미정" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>고객 요구사항 / RFP 내용 *</label>
+        <textarea id="proposal-requirements" placeholder="예: GMP 준수 스마트 MES 구축, 현 SAP ERP와 연동 필요, 3개 생산공장 적용, 내년 상반기 오픈 목표" style="min-height: 100px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>구축 희망 일정</label>
+        <input type="text" id="proposal-timeline" placeholder="예: 2025년 1월 착수 ~ 12월 오픈 (12개월)" />
+      </div>
+      <button class="btn-primary" id="btn-proposal" onclick="runProposal()">
+        <span>📄</span> 제안서 초안 생성
+      </button>
+      <div class="result-container" id="result-proposal">
+        <div class="result-header">
+          <div class="result-label">
+            <div class="streaming-dot" id="dot-proposal"></div>
+            제안서 초안
+          </div>
+          <button class="copy-btn" onclick="copyResult('box-proposal')">📋 복사</button>
+        </div>
+        <div class="result-box" id="box-proposal"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 영업 코칭 탭 -->
+  <div id="tab-coaching" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span>💬</span> 실시간 영업 대화 코칭</div>
+      <div class="form-group">
+        <label>고객 발언 *</label>
+        <textarea id="coaching-statement" placeholder='예:&#10;"LG CNS 말고 다른 업체도 검토 중인데, 가격이 30% 더 싸네요."&#10;"지금 당장 투자할 여력이 없어요. 내년에 다시 얘기합시다."&#10;"클라우드로 가면 보안이 걱정돼요. 우리 데이터가 외부로 나가잖아요."' style="min-height: 100px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>상황 맥락 (선택)</label>
+        <textarea id="coaching-context" placeholder="예: 2차 미팅, MES 제안 단계, 경쟁사는 오라클과 SAP · 고객은 CTO가 핵심 의사결정자" style="min-height: 60px;"></textarea>
+      </div>
+      <button class="btn-primary" id="btn-coaching" onclick="runCoaching()">
+        <span>💬</span> 대응 전략 요청
+      </button>
+      <div class="result-container" id="result-coaching">
+        <div class="result-header">
+          <div class="result-label">
+            <div class="streaming-dot" id="dot-coaching"></div>
+            코칭 결과
+          </div>
+          <button class="copy-btn" onclick="copyResult('box-coaching')">📋 복사</button>
+        </div>
+        <div class="result-box" id="box-coaching"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── 탭 전환 ──
+  function switchTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    const btns = document.querySelectorAll('.tab-btn');
+    const tabMap = { home: 0, analyze: 1, meeting: 2, proposal: 3, coaching: 4 };
+    btns[tabMap[name]].classList.add('active');
+  }
+
+  // ── SSE 스트리밍 공통 함수 ──
+  async function streamRequest(endpoint, payload, btnId, resultId, boxId, dotId) {
+    const btn = document.getElementById(btnId);
+    const result = document.getElementById(resultId);
+    const box = document.getElementById(boxId);
+    const dot = document.getElementById(dotId);
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 분석 중...';
+    box.textContent = '';
+    result.classList.add('visible');
+    dot.classList.add('active');
+
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.text();
+        box.textContent = '오류가 발생했습니다: ' + err;
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.text) {
+              box.textContent += parsed.text;
+              box.scrollTop = box.scrollHeight;
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      box.textContent = '서버에 연결할 수 없습니다.\n\nANTHROPIC_API_KEY 설정 후 서버를 실행하세요:\npip install -r requirements.txt\npython main.py';
+    } finally {
+      btn.disabled = false;
+      dot.classList.remove('active');
+      restoreBtn(btnId);
+    }
+  }
+
+  function restoreBtn(btnId) {
+    const labels = {
+      'btn-analyze': '🔍 기업 분석 시작',
+      'btn-meeting': '📋 브리핑 자료 생성',
+      'btn-proposal': '📄 제안서 초안 생성',
+      'btn-coaching': '💬 대응 전략 요청',
+    };
+    const btn = document.getElementById(btnId);
+    if (btn) btn.innerHTML = labels[btnId] || '실행';
+  }
+
+  // ── 각 기능 함수 ──
+  function runAnalysis() {
+    const company = document.getElementById('analyze-company').value.trim();
+    if (!company) { alert('기업명을 입력하세요.'); return; }
+    streamRequest('/api/analyze-company', {
+      company_name: company,
+      additional_info: document.getElementById('analyze-info').value.trim(),
+    }, 'btn-analyze', 'result-analyze', 'box-analyze', 'dot-analyze');
+  }
+
+  function runMeetingBrief() {
+    const company = document.getElementById('meeting-company').value.trim();
+    const purpose = document.getElementById('meeting-purpose').value.trim();
+    if (!company || !purpose) { alert('고객사명과 미팅 목적을 입력하세요.'); return; }
+    streamRequest('/api/meeting-briefing', {
+      company_name: company,
+      meeting_purpose: purpose,
+      attendees: document.getElementById('meeting-attendees').value.trim(),
+      known_issues: document.getElementById('meeting-issues').value.trim(),
+    }, 'btn-meeting', 'result-meeting', 'box-meeting', 'dot-meeting');
+  }
+
+  function runProposal() {
+    const company = document.getElementById('proposal-company').value.trim();
+    const req = document.getElementById('proposal-requirements').value.trim();
+    if (!company || !req) { alert('고객사명과 요구사항을 입력하세요.'); return; }
+    streamRequest('/api/draft-proposal', {
+      company_name: company,
+      requirements: req,
+      budget_range: document.getElementById('proposal-budget').value.trim(),
+      timeline: document.getElementById('proposal-timeline').value.trim(),
+    }, 'btn-proposal', 'result-proposal', 'box-proposal', 'dot-proposal');
+  }
+
+  function runCoaching() {
+    const stmt = document.getElementById('coaching-statement').value.trim();
+    if (!stmt) { alert('고객 발언을 입력하세요.'); return; }
+    streamRequest('/api/sales-coaching', {
+      customer_statement: stmt,
+      context: document.getElementById('coaching-context').value.trim(),
+    }, 'btn-coaching', 'result-coaching', 'box-coaching', 'dot-coaching');
+  }
+
+  function copyResult(boxId) {
+    const text = document.getElementById(boxId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('클립보드에 복사되었습니다.');
+    });
+  }
+</script>
 
 </body>
 </html>
