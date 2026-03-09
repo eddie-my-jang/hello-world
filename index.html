@@ -1,18 +1,51 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="ko">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <title>my-first-website</title>
-  <LINK href="styles.css" rel="stylesheet" type="text/css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D 바둑</title>
+  <link href="styles.css" rel="stylesheet" type="text/css">
 </head>
-
 <body>
+  <div id="ui">
+    <div id="title">3D 바둑</div>
+    <div id="status">
+      <div id="turn-display">
+        <span id="turn-stone" class="stone black"></span>
+        <span id="turn-text">흑의 차례</span>
+      </div>
+      <div id="scores">
+        <div class="score-item">
+          <span class="stone black small"></span>
+          <span>흑: <span id="black-captures">0</span> 집</span>
+        </div>
+        <div class="score-item">
+          <span class="stone white small"></span>
+          <span>백: <span id="white-captures">0</span> 집</span>
+        </div>
+      </div>
+    </div>
+    <div id="controls">
+      <button id="btn-pass">패스</button>
+      <button id="btn-resign">기권</button>
+      <button id="btn-reset">새 게임</button>
+      <div id="board-size-control">
+        <label>판 크기:</label>
+        <select id="board-size">
+          <option value="9">9×9</option>
+          <option value="13">13×13</option>
+          <option value="19" selected>19×19</option>
+        </select>
+      </div>
+    </div>
+    <div id="camera-controls">
+      <div>드래그: 회전 | 스크롤: 확대</div>
+    </div>
+    <div id="message" class="hidden"></div>
+  </div>
+  <canvas id="canvas"></canvas>
 
-<img src="https://octodex.github.com/images/daftpunktocat-thomas.gif" id="octocat" alt="octocat-gif" />
-
-<!-- Change this code here by copy and pasting your template on line 15 -->
-<p>Welcome to your first GitHub Pages website!</p>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
