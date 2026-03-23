@@ -1,18 +1,101 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="ko">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <title>my-first-website</title>
-  <LINK href="styles.css" rel="stylesheet" type="text/css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Periodic Labs News</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚗️</span>
+        <div>
+          <h1>Periodic Labs</h1>
+          <p>뉴스 &amp; 소식 모아보기</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="refreshBtn" class="btn-refresh">
+          <span class="refresh-icon">↻</span> 새로고침
+        </button>
+      </div>
+    </div>
+  </header>
 
-<img src="https://octodex.github.com/images/daftpunktocat-thomas.gif" id="octocat" alt="octocat-gif" />
+  <main class="main">
+    <!-- 회사 요약 카드 -->
+    <section class="company-card">
+      <div class="company-info">
+        <h2>Periodic Labs 소개</h2>
+        <p>AI 과학자를 만드는 스타트업. 전 OpenAI VP <strong>Liam Fedus</strong>와 전 Google DeepMind 연구원 <strong>Ekin Dogus Cubuk</strong>이 창립. Andreessen Horowitz, NVIDIA, Accel 등으로부터 <strong>3억 달러($300M)</strong> 시드 투자 유치 (기업가치 $1.5B+). AI로 신소재를 자동 발견하는 자율 실험실 구축 중.</p>
+        <div class="tags">
+          <span class="tag tag-blue">AI / 머신러닝</span>
+          <span class="tag tag-green">소재과학</span>
+          <span class="tag tag-purple">과학자동화</span>
+          <span class="tag tag-orange">$300M 시드</span>
+        </div>
+      </div>
+      <div class="company-stats">
+        <div class="stat">
+          <span class="stat-value">$1.5B+</span>
+          <span class="stat-label">기업 가치</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">$300M</span>
+          <span class="stat-label">시드 투자</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">75+</span>
+          <span class="stat-label">직원 수</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">2024</span>
+          <span class="stat-label">설립연도</span>
+        </div>
+      </div>
+    </section>
 
-<!-- Change this code here by copy and pasting your template on line 15 -->
-<p>Welcome to your first GitHub Pages website!</p>
+    <!-- 필터 탭 -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">전체</button>
+      <button class="filter-btn" data-filter="funding">투자 / 펀딩</button>
+      <button class="filter-btn" data-filter="tech">기술 / 연구</button>
+      <button class="filter-btn" data-filter="people">인물</button>
+      <button class="filter-btn" data-filter="community">커뮤니티</button>
+    </div>
 
+    <!-- 뉴스 상태 표시 -->
+    <div class="news-header">
+      <h2 class="section-title">최신 뉴스</h2>
+      <div id="status" class="status-badge">로드 중...</div>
+    </div>
+
+    <!-- 뉴스 피드 -->
+    <div id="newsFeed" class="news-grid">
+      <!-- 큐레이션 뉴스 -->
+    </div>
+
+    <!-- HackerNews 섹션 -->
+    <div class="hn-section">
+      <h2 class="section-title">
+        <span class="hn-icon">Y</span> HackerNews 토론
+      </h2>
+      <div id="hnFeed" class="news-list">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <span>HackerNews에서 검색 중...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Periodic Labs 뉴스 집계 서비스 · 마지막 업데이트: <span id="lastUpdated">-</span></p>
+    <p class="footer-note">뉴스 출처: TechCrunch, SiliconANGLE, MLQ.ai, HackerNews 외</p>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
