@@ -556,6 +556,27 @@ body {{
   overflow: hidden;
 }}
 
+/* 카드 펼치기 — 제목 2줄, 요약 3줄 클램프를 함께 푼다.
+   넘치는 카드에만 버튼이 뜨므로(markMore), 짧은 카드엔 아무것도 안 보임. */
+.card.expanded .title,
+.card.expanded .summary {{
+  -webkit-line-clamp: none;
+  overflow: visible;
+}}
+
+.more-btn {{
+  margin-top: 5px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  cursor: pointer;
+}}
+.more-btn[hidden] {{ display: none; }}
+
 .tags-row {{
   display: flex;
   flex-wrap: wrap;
@@ -1022,6 +1043,7 @@ function renderFeed() {{
           <div class="title">${{esc(v.title)}}</div>
           <div class="subline">${{esc(v.channel)}} · ${{fmtViews(v.views)}} · ${{fmtAgo(v.publishedAt)}}</div>
           ${{v.summary ? `<div class="summary">${{esc(v.summary)}}</div>` : ''}}
+          <button class="more-btn" data-more type="button" hidden>더보기</button>
           <div class="tags-row">
             <span class="tag">${{CATEGORY_LABELS[v.category]}}</span>
             ${{(v.tags || []).map((t) => `<span class="${{kwClass(t)}}" data-kw="${{esc(t)}}">${{esc(t)}}</span>`).join('')}}
@@ -1030,7 +1052,20 @@ function renderFeed() {{
       </div>`;
     feed.appendChild(a);
   }}
+  markMore();
 }}
+
+/* 실제로 잘린 카드에만 "더보기"를 띄운다. 임베드 폰트가 늦게 붙으면
+   줄 수가 달라지므로 폰트 로드 후 한 번 더 잰다. */
+function markMore() {{
+  const over = (el) => el && el.scrollHeight > el.clientHeight + 1;
+  for (const card of document.querySelectorAll('#feed .card')) {{
+    if (card.classList.contains('expanded')) continue;
+    const btn = card.querySelector('.more-btn');
+    if (btn) btn.hidden = !(over(card.querySelector('.title')) || over(card.querySelector('.summary')));
+  }}
+}}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(markMore);
 
 function renderBar() {{
   document.getElementById('bar-sub').textContent =
@@ -1148,6 +1183,14 @@ function openEvidence(label) {{
 }}
 
 document.getElementById('feed').addEventListener('click', (ev) => {{
+  const more = ev.target.closest('[data-more]');
+  if (more) {{
+    ev.preventDefault();          // 카드가 <a>라 막지 않으면 유튜브로 넘어감
+    ev.stopPropagation();
+    const card = more.closest('.card');
+    more.textContent = card.classList.toggle('expanded') ? '접기' : '더보기';
+    return;
+  }}
   const chip = ev.target.closest('[data-kw]');
   if (!chip) return;
   ev.preventDefault();
