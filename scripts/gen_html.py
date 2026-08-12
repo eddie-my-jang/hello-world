@@ -460,7 +460,13 @@ body {{
 /* ---------- feed ---------- */
 #feed {{ display: flex; flex-direction: column; gap: 20px; }}
 
-.card {{ display: block; text-decoration: none; color: inherit; }}
+/* 카드 = <article>. 링크는 안쪽 .card-link 하나뿐이고, 더보기 버튼과 태그 칩은
+   .card-foot 으로 링크 바깥에 둔다. <a> 안에 버튼을 넣으면 스펙 위반인 데다,
+   탭이 링크 활성화로 먼저 처리되는 환경에서 preventDefault가 늦어 유튜브로 넘어간다. */
+.card {{ display: block; }}
+.card-link {{ display: block; text-decoration: none; color: inherit; }}
+
+.card-foot {{ padding: 0 16px 0 64px; }}   /* 16 + 아바타 36 + gap 12 = 제목 라인에 맞춤 */
 
 .thumb {{
   position: relative;
@@ -566,6 +572,7 @@ body {{
 
 .more-btn {{
   margin-top: 5px;
+  display: block;
   border: none;
   background: none;
   padding: 0;
@@ -906,7 +913,7 @@ function fmtGen(iso) {{
   const p = (n) => String(n).padStart(2, '0');
   return `${{d.getFullYear()}}.${{p(d.getMonth() + 1)}}.${{p(d.getDate())}} ${{p(d.getHours())}}:${{p(d.getMinutes())}}`;
 }}
-function esc(s) {{ return String(s).replace(/[<>&]/g, (c) => ({{'<':'&lt;','>':'&gt;','&':'&amp;'}})[c]); }}
+function esc(s) {{ return String(s).replace(/[<>&"]/g, (c) => ({{'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}})[c]); }}
 
 const DAY_ICON = `<svg viewBox="0 0 48 48" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="24" cy="24" r="10" fill="var(--accent)"/>
@@ -1025,32 +1032,33 @@ function renderFeed() {{
   }}
   for (const v of list) {{
     const cols = thumbColors(v.channel, v.category);
-    const a = document.createElement('a');
-    a.className = 'card';
-    a.href = v.link;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.style.setProperty('--cat-color', `var(--cat-${{v.category}})`);
-    a.innerHTML = `
-      <div class="thumb" style="--c1:${{cols[0]}};--c2:${{cols[1]}}">
-        <span class="thumb-ch">${{esc(v.channel)}}</span>
-        <span class="thumb-play"></span>
-        ${{v.durationSec ? `<span class="dur">${{fmtDur(v.durationSec)}}</span>` : ''}}
-      </div>
-      <div class="meta">
-        <span class="av" style="background:${{avColor(v.channel)}}">${{esc(initials(v.channel))}}</span>
-        <div class="meta-body">
-          <div class="title">${{esc(v.title)}}</div>
-          <div class="subline">${{esc(v.channel)}} · ${{fmtViews(v.views)}} · ${{fmtAgo(v.publishedAt)}}</div>
-          ${{v.summary ? `<div class="summary">${{esc(v.summary)}}</div>` : ''}}
-          <button class="more-btn" data-more type="button" hidden>더보기</button>
-          <div class="tags-row">
-            <span class="tag">${{CATEGORY_LABELS[v.category]}}</span>
-            ${{(v.tags || []).map((t) => `<span class="${{kwClass(t)}}" data-kw="${{esc(t)}}">${{esc(t)}}</span>`).join('')}}
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.style.setProperty('--cat-color', `var(--cat-${{v.category}})`);
+    card.innerHTML = `
+      <a class="card-link" href="${{esc(v.link)}}" target="_blank" rel="noopener">
+        <div class="thumb" style="--c1:${{cols[0]}};--c2:${{cols[1]}}">
+          <span class="thumb-ch">${{esc(v.channel)}}</span>
+          <span class="thumb-play"></span>
+          ${{v.durationSec ? `<span class="dur">${{fmtDur(v.durationSec)}}</span>` : ''}}
+        </div>
+        <div class="meta">
+          <span class="av" style="background:${{avColor(v.channel)}}">${{esc(initials(v.channel))}}</span>
+          <div class="meta-body">
+            <div class="title">${{esc(v.title)}}</div>
+            <div class="subline">${{esc(v.channel)}} · ${{fmtViews(v.views)}} · ${{fmtAgo(v.publishedAt)}}</div>
+            ${{v.summary ? `<div class="summary">${{esc(v.summary)}}</div>` : ''}}
           </div>
         </div>
+      </a>
+      <div class="card-foot">
+        <button class="more-btn" data-more type="button" hidden>더보기</button>
+        <div class="tags-row">
+          <span class="tag">${{CATEGORY_LABELS[v.category]}}</span>
+          ${{(v.tags || []).map((t) => `<span class="${{kwClass(t)}}" data-kw="${{esc(t)}}">${{esc(t)}}</span>`).join('')}}
+        </div>
       </div>`;
-    feed.appendChild(a);
+    feed.appendChild(card);
   }}
   markMore();
 }}
@@ -1185,8 +1193,9 @@ function openEvidence(label) {{
 document.getElementById('feed').addEventListener('click', (ev) => {{
   const more = ev.target.closest('[data-more]');
   if (more) {{
-    ev.preventDefault();          // 카드가 <a>라 막지 않으면 유튜브로 넘어감
-    ev.stopPropagation();
+    // 버튼·칩은 .card-foot(링크 바깥)에 있어서 이 이벤트 경로엔 <a>가 없음.
+    // preventDefault는 혹시 나중에 마크업이 바뀌어도 안전하도록 남겨둔 보호막.
+    ev.preventDefault();
     const card = more.closest('.card');
     more.textContent = card.classList.toggle('expanded') ? '접기' : '더보기';
     return;
@@ -1194,7 +1203,6 @@ document.getElementById('feed').addEventListener('click', (ev) => {{
   const chip = ev.target.closest('[data-kw]');
   if (!chip) return;
   ev.preventDefault();
-  ev.stopPropagation();
   openEvidence(chip.dataset.kw);
 }});
 
