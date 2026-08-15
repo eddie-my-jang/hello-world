@@ -947,6 +947,13 @@ function selected() {{
   return list;
 }}
 
+/* NotebookLM으로 넘길 목록. 60초 이하 짧은 클립은 뺀다 —
+   자막이 없어 소스 등록에서 실패하고, 내용도 홍보성이라 소스 가치가 없다.
+   피드에는 그대로 보여주고 복사 목록에서만 제외한다. */
+function notebookList() {{
+  return selected().filter((v) => !v.durationSec || v.durationSec > 60);
+}}
+
 /* ---------- render ---------- */
 function renderRail() {{
   const rail = document.getElementById('rail');
@@ -1079,7 +1086,7 @@ function renderBar() {{
   document.getElementById('bar-sub').textContent =
     `${{VIDEOS.length}}개 · ${{fmtGen(GENERATED_AT)}}`;
   document.getElementById('nb-label').textContent =
-    `NotebookLM · ${{selected().length}}개 붙여넣기`;
+    `NotebookLM · ${{notebookList().length}}개 붙여넣기`;
 }}
 
 function renderAll() {{
@@ -1115,8 +1122,11 @@ document.getElementById('brief-more').onclick = () => {{
 }};
 
 document.getElementById('nb-btn').onclick = async () => {{
-  const list = selected();
-  await copyText(list.map((v) => v.link).join('\\n'), `${{list.length}}개 링크 복사됨 · NotebookLM 여는 중`);
+  const list = notebookList();
+  const dropped = selected().length - list.length;
+  const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
+  await copyText(list.map((v) => v.link).join('\\n'),
+    `${{list.length}}개 링크 복사됨${{note}} · NotebookLM 여는 중`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
 }};
 
