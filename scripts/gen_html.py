@@ -1124,9 +1124,10 @@ document.getElementById('brief-more').onclick = () => {{
 
 /* 붙여넣을 곳이 중요하다. NotebookLM의 'YouTube' 소스는 URL을 하나만 받아서
    여러 줄을 넣으면 덩어리 전체를 URL 하나로 읽고 실패한다(실측).
-   '링크 / 웹사이트(URL)' 소스는 줄바꿈이나 공백으로 구분된 여러 URL을 각각의
-   소스로 파싱하므로, 줄바꿈으로 넘기고 어디에 넣어야 하는지 토스트로 알려준다. */
-const NB_SEP = '\\n';
+   '링크 / 웹사이트(URL)' 소스는 여러 URL을 각각의 소스로 파싱한다.
+   구분자는 공백을 쓴다 — 줄바꿈으로 넣었더니 1개만 등록됐는데(실측),
+   입력창이 한 줄짜리라 줄바꿈에서 잘린 것으로 보인다. 공백은 잘리지 않는다. */
+const NB_SEP = ' ';
 
 document.getElementById('nb-btn').onclick = async () => {{
   const list = notebookList();
