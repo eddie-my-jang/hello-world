@@ -815,7 +815,7 @@ body {{
   <div class="grabber"></div>
   <h2>NotebookLM 오디오 생성 프롬프트</h2>
   <p class="sheet-text" id="prompt-text"></p>
-  <p class="sheet-hint">NotebookLM에 소스를 붙여넣은 뒤, Audio Overview의 커스터마이즈 입력창에 이 프롬프트를 넣으세요.</p>
+  <p class="sheet-hint">링크는 <b>소스 추가 → 링크 / 웹사이트(URL)</b>에 붙여넣으세요. 'YouTube' 항목은 URL을 하나만 받아서 여러 개를 넣으면 실패합니다. 소스를 넣은 뒤 Audio Overview의 커스터마이즈 입력창에 이 프롬프트를 넣으세요.</p>
   <button class="btn" id="prompt-copy">복사하기</button>
 </div>
 
@@ -1122,16 +1122,18 @@ document.getElementById('brief-more').onclick = () => {{
   document.getElementById('brief-more').textContent = on ? '더보기' : '접기';
 }};
 
-/* 줄바꿈으로 이어붙이면 NotebookLM이 덩어리 전체를 URL 하나로 읽어서
-   "소스를 추가할 수 없음"으로 끝난다(실측). 쉼표+공백으로 구분해서 넘긴다. */
-const NB_SEP = ', ';
+/* 붙여넣을 곳이 중요하다. NotebookLM의 'YouTube' 소스는 URL을 하나만 받아서
+   여러 줄을 넣으면 덩어리 전체를 URL 하나로 읽고 실패한다(실측).
+   '링크 / 웹사이트(URL)' 소스는 줄바꿈이나 공백으로 구분된 여러 URL을 각각의
+   소스로 파싱하므로, 줄바꿈으로 넘기고 어디에 넣어야 하는지 토스트로 알려준다. */
+const NB_SEP = '\\n';
 
 document.getElementById('nb-btn').onclick = async () => {{
   const list = notebookList();
   const dropped = selected().length - list.length;
   const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
   await copyText(list.map((v) => v.link).join(NB_SEP),
-    `${{list.length}}개 링크 복사됨${{note}} · NotebookLM 여는 중`);
+    `${{list.length}}개 링크 복사됨${{note}} · 소스 추가 → '링크/웹사이트'에 붙여넣기 (YouTube 아님)`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
 }};
 
