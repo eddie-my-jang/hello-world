@@ -805,6 +805,7 @@ body {{
 
 <div class="bottombar">
   <button class="cta" id="nb-btn"><span id="nb-label"></span></button>
+  <button class="icon-btn" id="nb-text" aria-label="요약 텍스트로 복사" title="요약 텍스트로 복사 — 링크가 안 먹힐 때 '복사된 텍스트' 소스로 붙여넣기">📄</button>
   <button class="icon-btn" id="prompt-btn" aria-expanded="false" aria-label="오디오 생성 프롬프트" title="오디오 생성 프롬프트">🎙</button>
 </div>
 
@@ -1131,6 +1132,22 @@ document.getElementById('nb-btn').onclick = async () => {{
   const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
   await copyText(list.map((v) => v.link).join(NB_SEP),
     `${{list.length}}개 링크 복사됨${{note}} · NotebookLM 여는 중`);
+  window.open('https://notebooklm.google.com/', '_blank', 'noopener');
+}};
+
+/* 링크 붙여넣기가 막힐 때를 위한 보험. 제목·채널·요약·링크를 한 덩어리 텍스트로 만들어
+   NotebookLM의 '복사된 텍스트' 소스에 넣는다. 구분자 해석에 기대지 않으므로 항상 통한다.
+   대신 소스가 영상 자막이 아니라 이 앱이 만든 요약이 된다. */
+document.getElementById('nb-text').onclick = async () => {{
+  const list = notebookList();
+  if (!list.length) return;
+  const head = `AI 브리핑 · ${{fmtGen(GENERATED_AT)}} 기준 ${{list.length}}건\\n` +
+    (activeChip === 'today' ? DAILY_SUMMARY : WEEKLY_SUMMARY) + '\\n';
+  const body = list.map((v) =>
+    `[${{CATEGORY_LABELS[v.category]}}] ${{v.title}} — ${{v.channel}}\\n` +
+    (v.summary ? v.summary + '\\n' : '') + v.link).join('\\n\\n');
+  await copyText(head + '\\n' + body,
+    `요약 텍스트 복사됨 · NotebookLM에서 '복사된 텍스트'로 붙여넣으세요`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
 }};
 
