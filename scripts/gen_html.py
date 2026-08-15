@@ -805,7 +805,7 @@ body {{
 
 <div class="bottombar">
   <button class="cta" id="nb-btn"><span id="nb-label"></span></button>
-  <button class="icon-btn" id="nb-text" aria-label="요약 텍스트로 복사" title="요약 텍스트로 복사 — 링크가 안 먹힐 때 '복사된 텍스트' 소스로 붙여넣기">📄</button>
+  <button class="icon-btn" id="nb-links" aria-label="링크만 복사" title="링크만 복사 — 크롬 확장 프로그램이나 PC에서 쓸 때">🔗</button>
   <button class="icon-btn" id="prompt-btn" aria-expanded="false" aria-label="오디오 생성 프롬프트" title="오디오 생성 프롬프트">🎙</button>
 </div>
 
@@ -815,7 +815,7 @@ body {{
   <div class="grabber"></div>
   <h2>NotebookLM 오디오 생성 프롬프트</h2>
   <p class="sheet-text" id="prompt-text"></p>
-  <p class="sheet-hint">링크는 <b>소스 추가 → 링크 / 웹사이트(URL)</b>에 붙여넣으세요. 'YouTube' 항목은 URL을 하나만 받아서 여러 개를 넣으면 실패합니다. 소스를 넣은 뒤 Audio Overview의 커스터마이즈 입력창에 이 프롬프트를 넣으세요.</p>
+  <p class="sheet-hint">기본 버튼은 요약 텍스트를 복사합니다. <b>소스 추가 → 복사된 텍스트</b>에 붙여넣으세요. 링크를 여러 개 넣는 방식은 'YouTube'와 '링크/웹사이트' 양쪽에서 실패했습니다(첫 개만 등록되거나 오류). 🔗 버튼은 크롬 확장이나 PC 작업용 링크 목록입니다. 소스를 넣은 뒤 Audio Overview의 커스터마이즈 입력창에 이 프롬프트를 넣으세요.</p>
   <button class="btn" id="prompt-copy">복사하기</button>
 </div>
 
@@ -1087,7 +1087,7 @@ function renderBar() {{
   document.getElementById('bar-sub').textContent =
     `${{VIDEOS.length}}개 · ${{fmtGen(GENERATED_AT)}}`;
   document.getElementById('nb-label').textContent =
-    `NotebookLM · ${{notebookList().length}}개 붙여넣기`;
+    `NotebookLM · ${{notebookList().length}}개 요약 복사`;
 }}
 
 function renderAll() {{
@@ -1132,29 +1132,34 @@ document.getElementById('brief-more').onclick = () => {{
 const NB_SEP = '\\n';
 function nbLink(v) {{ return 'https://youtu.be/' + v.videoId; }}
 
-document.getElementById('nb-btn').onclick = async () => {{
-  const list = notebookList();
-  const dropped = selected().length - list.length;
-  const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
-  await copyText(list.map(nbLink).join(NB_SEP),
-    `${{list.length}}개 링크 복사됨${{note}} · 소스 추가 → '링크/웹사이트'에 붙여넣기 (YouTube 아님)`);
-  window.open('https://notebooklm.google.com/', '_blank', 'noopener');
-}};
-
-/* 링크 붙여넣기가 막힐 때를 위한 보험. 제목·채널·요약·링크를 한 덩어리 텍스트로 만들어
-   NotebookLM의 '복사된 텍스트' 소스에 넣는다. 구분자 해석에 기대지 않으므로 항상 통한다.
-   대신 소스가 영상 자막이 아니라 이 앱이 만든 요약이 된다. */
-document.getElementById('nb-text').onclick = async () => {{
-  const list = notebookList();
-  if (!list.length) return;
+/* 기본 경로: 제목·채널·요약·링크를 한 덩어리 텍스트로 만들어 '복사된 텍스트' 소스에 넣는다.
+   URL 파서를 아예 거치지 않으므로 확실히 등록된다.
+   링크를 여러 개 넣는 방식은 'YouTube' 소스(URL 1개만 받음)와 '링크/웹사이트' 소스 양쪽에서,
+   줄바꿈·공백·쉼표, watch?v= 형태와 youtu.be 형태를 모두 시도했지만 전부 실패했다. */
+function notebookText(list) {{
   const head = `AI 브리핑 · ${{fmtGen(GENERATED_AT)}} 기준 ${{list.length}}건\\n` +
     (activeChip === 'today' ? DAILY_SUMMARY : WEEKLY_SUMMARY) + '\\n';
   const body = list.map((v) =>
     `[${{CATEGORY_LABELS[v.category]}}] ${{v.title}} — ${{v.channel}}\\n` +
     (v.summary ? v.summary + '\\n' : '') + nbLink(v)).join('\\n\\n');
-  await copyText(head + '\\n' + body,
-    `요약 텍스트 복사됨 · NotebookLM에서 '복사된 텍스트'로 붙여넣으세요`);
+  return head + '\\n' + body;
+}}
+
+document.getElementById('nb-btn').onclick = async () => {{
+  const list = notebookList();
+  if (!list.length) return;
+  await copyText(notebookText(list),
+    `${{list.length}}개 요약 복사됨 · 소스 추가 → '복사된 텍스트'에 붙여넣기`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
+}};
+
+// 링크만 필요한 경우(크롬 확장, PC 작업 등)를 위해 남겨둔다
+document.getElementById('nb-links').onclick = async () => {{
+  const list = notebookList();
+  if (!list.length) return;
+  const dropped = selected().length - list.length;
+  const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
+  await copyText(list.map(nbLink).join(NB_SEP), `${{list.length}}개 링크 복사됨${{note}}`);
 }};
 
 const AUDIO_PROMPT = `당신은 LG CNS 화학전지사업부 소속 B2B AI/IT 오퍼링 전략 담당자를 위한 팟캐스트 진행자입니다. 방금 추가한 소스들을 정리해서 기억할만한 변화나 중요 용어 등을 포함하여 종합 정리 공유해주고, 정유·석화·소재·제약바이오·에너지·화장품·음료 산업 관점에서 분석해서 아래 세 가지를 추가 논의해주세요.
