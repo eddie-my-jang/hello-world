@@ -1121,11 +1121,15 @@ document.getElementById('brief-more').onclick = () => {{
   document.getElementById('brief-more').textContent = on ? '더보기' : '접기';
 }};
 
+/* 줄바꿈으로 이어붙이면 NotebookLM이 덩어리 전체를 URL 하나로 읽어서
+   "소스를 추가할 수 없음"으로 끝난다(실측). 쉼표+공백으로 구분해서 넘긴다. */
+const NB_SEP = ', ';
+
 document.getElementById('nb-btn').onclick = async () => {{
   const list = notebookList();
   const dropped = selected().length - list.length;
   const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
-  await copyText(list.map((v) => v.link).join('\\n'),
+  await copyText(list.map((v) => v.link).join(NB_SEP),
     `${{list.length}}개 링크 복사됨${{note}} · NotebookLM 여는 중`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
 }};
