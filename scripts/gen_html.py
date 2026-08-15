@@ -1123,17 +1123,20 @@ document.getElementById('brief-more').onclick = () => {{
 }};
 
 /* 붙여넣을 곳이 중요하다. NotebookLM의 'YouTube' 소스는 URL을 하나만 받아서
-   여러 줄을 넣으면 덩어리 전체를 URL 하나로 읽고 실패한다(실측).
-   '링크 / 웹사이트(URL)' 소스는 여러 URL을 각각의 소스로 파싱한다.
-   구분자는 공백을 쓴다 — 줄바꿈으로 넣었더니 1개만 등록됐는데(실측),
-   입력창이 한 줄짜리라 줄바꿈에서 잘린 것으로 보인다. 공백은 잘리지 않는다. */
-const NB_SEP = ' ';
+   여러 개를 넣으면 덩어리 전체를 URL 하나로 읽고 실패한다(실측).
+   '링크 / 웹사이트(URL)' 소스에 넣어야 각각의 소스로 파싱된다.
+
+   거기서도 watch?v= 형태로는 첫 URL만 등록됐다(줄바꿈·공백 모두 실패).
+   쿼리스트링(?, =, &)이 섞이면 파서가 URL 경계를 못 잡는 것으로 보여,
+   쿼리가 아예 없는 youtu.be/<id> 경로 형태로 바꾸고 줄바꿈으로 구분한다. */
+const NB_SEP = '\\n';
+function nbLink(v) {{ return 'https://youtu.be/' + v.videoId; }}
 
 document.getElementById('nb-btn').onclick = async () => {{
   const list = notebookList();
   const dropped = selected().length - list.length;
   const note = dropped ? ` (짧은 클립 ${{dropped}}개 제외)` : '';
-  await copyText(list.map((v) => v.link).join(NB_SEP),
+  await copyText(list.map(nbLink).join(NB_SEP),
     `${{list.length}}개 링크 복사됨${{note}} · 소스 추가 → '링크/웹사이트'에 붙여넣기 (YouTube 아님)`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
 }};
@@ -1148,7 +1151,7 @@ document.getElementById('nb-text').onclick = async () => {{
     (activeChip === 'today' ? DAILY_SUMMARY : WEEKLY_SUMMARY) + '\\n';
   const body = list.map((v) =>
     `[${{CATEGORY_LABELS[v.category]}}] ${{v.title}} — ${{v.channel}}\\n` +
-    (v.summary ? v.summary + '\\n' : '') + v.link).join('\\n\\n');
+    (v.summary ? v.summary + '\\n' : '') + nbLink(v)).join('\\n\\n');
   await copyText(head + '\\n' + body,
     `요약 텍스트 복사됨 · NotebookLM에서 '복사된 텍스트'로 붙여넣으세요`);
   window.open('https://notebooklm.google.com/', '_blank', 'noopener');
