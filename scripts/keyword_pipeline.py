@@ -157,7 +157,9 @@ def _window(q, a, b, cache):
     — 4개 중 1개만 튀는 경우(실측 다수)를 불안정으로 오판하지 않기 위함.
     반환: (대표값 or None, 샘플들, 안정 여부)"""
     xs = [x for x in (_search(q, a, b, i, cache) for i in (1, 2)) if x is not None]
-    if len(xs) >= 2 and max(xs) / min(xs) > 2:      # 흔들림 → 추가 샘플링 (200 units)
+    # 0이 섞여 나오는 일이 있다(실측: sovereign foundation models의 작년 창).
+    # 0은 그 자체로 최대 폭의 흔들림이므로 나누기 전에 걸러서 추가 샘플링으로 보낸다.
+    if len(xs) >= 2 and (min(xs) == 0 or max(xs) / min(xs) > 2):   # 흔들림 → 추가 샘플링 (200 units)
         xs += [x for x in (_search(q, a, b, i, cache) for i in (3, 4)) if x is not None]
     if not xs:
         return None, xs, False
