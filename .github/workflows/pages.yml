@@ -3,9 +3,13 @@
 # 올라가는 것은 demo/dist/ 뿐이다 — 서버 없이 도는 정적 사이트.
 # 앱 본체(사진 분석)는 /api/read 서버리스 함수가 필요해서 Pages 로는 못 올린다.
 #
-# 처음 한 번은 워크플로가 알아서 Pages 를 켠다 (configure-pages 의 enablement).
-# 권한 때문에 실패하면 저장소 Settings → Pages → Source 를 "GitHub Actions" 로
-# 직접 바꾸고 다시 돌리면 된다.
+# 처음 한 번은 사람이 켜야 한다:
+#   저장소 Settings → Pages → Source 를 "GitHub Actions" 로.
+#
+# 아래 configure-pages 에 enablement: true 를 줬지만, 워크플로 토큰에는
+# Pages 사이트를 새로 만들 권한이 없어서 이렇게 끝난다:
+#   Create Pages site failed. Error: Resource not accessible by integration
+# 한 번 켜 두면 그 뒤로는 enablement 가 기존 사이트를 찾아 그냥 넘어간다.
 
 name: 데모 페이지 배포
 
@@ -42,7 +46,7 @@ jobs:
 
       - run: npm run demo
 
-      # enablement: Pages 가 꺼져 있으면 켜고 시작한다
+      # Pages 가 이미 켜져 있어야 한다 (맨 위 주석 참고)
       - uses: actions/configure-pages@v5
         with:
           enablement: true
