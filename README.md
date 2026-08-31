@@ -260,11 +260,19 @@ npm run demo        # → demo/dist/arabic-app.html  (파일을 그대로 열면
 
 ```
 demo/
-  build.mjs       조립 스크립트
-  template.html   틀 (마크업과 데모 전용 CSS)
-  app.js          바닐라 JS 로 옮긴 읽기판 + 자모표
-  dist/           결과물 (커밋하지 않습니다)
+  build.mjs             조립 스크립트
+  template.html         틀 (마크업과 데모 전용 CSS)
+  app.js                바닐라 JS 로 옮긴 읽기판 + 자모표
+  manifest.webmanifest  홈 화면에 추가했을 때의 이름·아이콘
+  sw.js                 서비스 워커 (오프라인)
+  dist/                 Pages 에 올라가는 사이트 (커밋하지 않습니다)
+  build/                아티팩트용 조각 (커밋하지 않습니다)
 ```
+
+결과물이 둘입니다. `dist/index.html` 은 `<head>` 까지 갖춘 온전한 문서라 홈 화면에
+추가하면 앱처럼 뜨고 오프라인에서도 열립니다. `build/artifact.html` 은 아티팩트로
+올릴 조각인데, 그쪽은 `<head>` 를 호스트가 쥐고 있어 manifest 나 서비스 워커를
+넣을 수 없습니다.
 
 **팔레트와 데이터를 앱 소스에서 그대로 읽어 옵니다** — `src/styles.css`,
 `src/lib/letters.js`, `src/lib/samples.js`. 데모에 옮겨 적어 두면 앱을 고칠 때마다
@@ -274,6 +282,26 @@ demo/
 대신 붙여넣은 아랍어를 앱과 **같은 코드**로 읽어 줍니다 (`build.mjs` 가
 `src/lib/transliterate.js` 를 페이지 안에 그대로 넣습니다). 또
 **결합 검사** 칸이 지금 이 브라우저가 ZWJ 없이도 글자를 이어 그리는지 직접 재서 알려 줍니다.
+
+## 데모를 아이폰·아이패드에 올리기 (GitHub Pages)
+
+데모는 서버가 전혀 필요 없는 정적 페이지라 GitHub Pages 로 그냥 올라갑니다.
+Vercel 계정도 API 키도 필요 없습니다.
+
+1. 저장소 **Settings → Pages → Source** 를 `GitHub Actions` 로 바꿉니다 (한 번만)
+2. `master` 에 머지하면 `.github/workflows/pages.yml` 이 돌면서 `demo/dist/` 를 올립니다
+3. 뜨는 주소(`https://<사용자>.github.io/hello-world/`)를 **사파리**로 열고
+   공유(↑) → **홈 화면에 추가**
+
+그러면 주소창 없는 전체 화면 앱이 되고, **비행기 모드에서도 열립니다.**
+자모표·예문 36개·부호대로 읽기가 전부 브라우저 안에서 도는 일이라 그렇습니다.
+웹폰트는 처음 온라인으로 열 때 담아 둡니다.
+
+경로를 전부 상대(`./`)로 씁니다 — Pages 는 도메인 루트가 아니라
+`/<저장소이름>/` 아래에 붙기 때문에 절대 경로로 적으면 전부 깨집니다.
+
+> 데모에는 사진 분석이 없습니다. 그건 `/api/read` 서버리스 함수가 필요해서
+> Pages 로는 못 올립니다. 사진까지 쓰려면 아래 Vercel 배포를 하세요.
 
 ## 배포 (Vercel)
 
