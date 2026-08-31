@@ -283,6 +283,8 @@ html, body {
 .letter-card__reading { flex: 1; min-width: 0; }
 .letter-card__kr { font-size: 27px; font-weight: 600; line-height: 1.25; }
 .letter-card__ro { font-size: 13px; color: var(--ink-3); font-style: italic; }
+.letter-card__warn { font-size: 12px; color: var(--rubric); margin-top: 2px; }
+.editor__gauge { margin: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.6; }
 .letter-card__pos { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
 /* ── 조작 ───────────────────────────────────────────────────────────────────── */

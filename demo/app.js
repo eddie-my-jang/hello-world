@@ -68,6 +68,12 @@
   var LONGS = DATA.LONGS || [];
   var EXTRAS = DATA.EXTRAS || [];
 
+  /* ═══ 발음 옮기기 ══════════════════════════════════════════════════════════
+     build.mjs 가 src/lib/transliterate.js 를 여기에 그대로 넣는다.
+     앱과 같은 코드라 붙여넣은 글을 앱과 똑같이 읽는다.
+     ═══════════════════════════════════════════════════════════════════════ */
+/*__TRANSLITERATE__*/
+
   function $(id) { return document.getElementById(id); }
 
   /* ═══ 읽기판 ══════════════════════════════════════════════════════════════ */
@@ -152,7 +158,7 @@
       $('focusGlyph').textContent = l.a;
       $('focusKo').textContent = l.k || '발음 정보 없음';
       $('focusKo').style.fontSize = l.k ? '' : '15px';
-      $('focusRo').textContent = l.r || '';
+      $('focusRo').textContent = (l.r || '') + (l.unknown ? '  · 부호가 없어 모음을 알 수 없습니다' : '');
       $('focusCount').textContent = (state.li + 1) + ' / ' + letters().length;
 
       $('prev').disabled = state.li === 0 && state.wi === 0;
@@ -343,16 +349,16 @@
         e.preventDefault();
         var text = $('composeText').value.trim();
         if (!text) return;
-        var words = text.split(/\s+/).filter(Boolean).slice(0, 8).map(function (a) {
-          return { a: a, k: '', r: '', m: '', l: splitIntoLetters(a).map(function (ch) {
-            return { a: ch, k: '', r: '' };
-          }) };
-        }).filter(function (w) { return w.l.length; });
-
-        if (!words.length) return;
+        var out = readText(text);
+        if (!out.w.length) return;
         stop();
         state.deck = -1;
-        state.data = { t: '직접 입력한 글자입니다. 발음 정보는 없습니다.', w: words };
+        state.data = {
+          t: out.unknown
+            ? '붙어 있는 부호대로만 읽었습니다. 모음을 알 수 없는 자리가 ' + out.unknown + '곳 있습니다.'
+            : '붙어 있는 부호대로 읽었습니다.',
+          w: out.w
+        };
         state.wi = 0;
         state.li = 0;
         renderDecks();

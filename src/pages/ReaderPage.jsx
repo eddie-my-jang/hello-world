@@ -7,6 +7,7 @@ import Uploader from '../components/Uploader.jsx'
 import TextEditor from '../components/TextEditor.jsx'
 import SamplePicker from '../components/SamplePicker.jsx'
 import { readImage, readText } from '../lib/api.js'
+import { readText as transliterate } from '../lib/transliterate.js'
 import { downscaleImage } from '../lib/image.js'
 import { canSpeakArabic, speak, watchVoices } from '../lib/speech.js'
 import { SAMPLES } from '../lib/samples.js'
@@ -155,6 +156,27 @@ export default function ReaderPage() {
       return readText(text)
     })
 
+  /** 서버를 거치지 않고, 붙어 있는 부호대로만 읽는다 */
+  const handleLocalRead = (text) => {
+    const out = transliterate(text)
+    if (!out.w.length) {
+      setError('아랍어를 찾지 못했습니다.')
+      return
+    }
+    setPreview(null)
+    setResult({
+      t: out.unknown
+        ? `붙어 있는 부호대로만 읽었습니다. 모음을 알 수 없는 자리가 ${out.unknown}곳 있습니다.`
+        : '붙어 있는 부호대로 읽었습니다.',
+      w: out.w,
+    })
+    setSampleIndex(-1)
+    setWordIndex(0)
+    setLetterIndex(0)
+    setPlaying(false)
+    setError('')
+  }
+
   const sentence = useMemo(() => words.map((w) => w.a).join(' '), [words])
 
   return (
@@ -204,7 +226,12 @@ export default function ReaderPage() {
           </section>
 
           <section className="panel">
-            <TextEditor value={sentence} onSubmit={handleText} busy={busy} />
+            <TextEditor
+              value={sentence}
+              onAnalyze={handleText}
+              onReadLocal={handleLocalRead}
+              busy={busy}
+            />
           </section>
         </>
       )}

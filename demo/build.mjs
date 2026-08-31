@@ -39,16 +39,31 @@ function inlineJson(value) {
   return JSON.stringify(value, null, 2).replace(/</g, '\\u003C')
 }
 
-const [template, appJs, styles] = await Promise.all([
+// 발음 옮기기 엔진을 데모 안으로 그대로 넣는다.
+// import/export 만 걷어낸다 — LETTERS·isMark·splitIntoLetters 는 app.js 에 이미 있다.
+function inlineModule(source) {
+  const stripped = source
+    .split('\n')
+    .filter((line) => !line.startsWith('import '))
+    .join('\n')
+    .replace(/^export /gm, '')
+  if (stripped.includes('import ') || /^export /m.test(stripped)) {
+    throw new Error('transliterate.js 에서 걷어내지 못한 import/export 가 있습니다')
+  }
+  return stripped.trim()
+}
+
+const [template, appJs, styles, engine] = await Promise.all([
   read('demo/template.html'),
   read('demo/app.js'),
   read('src/styles.css'),
+  read('src/lib/transliterate.js'),
 ])
 
 const page = template
   .replace('/*__BASE_CSS__*/', () => baseCss(styles))
   .replace('/*__DATA__*/', () => inlineJson(data))
-  .replace('/*__APP_JS__*/', () => appJs)
+  .replace('/*__APP_JS__*/', () => appJs.replace('/*__TRANSLITERATE__*/', () => inlineModule(engine)))
 
 const leftover = page.match(/\/\*__[A-Z_]+__\*\//g)
 if (leftover) throw new Error(`치환되지 않은 자리가 있습니다: ${leftover.join(', ')}`)

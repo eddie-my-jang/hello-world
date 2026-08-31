@@ -10,6 +10,9 @@ export default function LetterCard({ letter, index, total }) {
       <div className="letter-card__reading">
         <div className="letter-card__kr">{letter.k || '—'}</div>
         <div className="letter-card__ro">{letter.r || ''}</div>
+        {letter.unknown && (
+          <div className="letter-card__warn">부호가 없어 모음을 알 수 없습니다</div>
+        )}
       </div>
       <div className="letter-card__pos">
         {index + 1} / {total}
