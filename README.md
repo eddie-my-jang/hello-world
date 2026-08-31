@@ -160,6 +160,7 @@ src/
     LetterDetail.jsx     펼친 글자 — 네 모양 + 부호별 발음
     ItemCard.jsx         부호·장모음·그밖의 글자 줄 카드
   styles.css             팔레트와 폰트를 참조하는 유일한 파일
+public/                  manifest·서비스 워커·아이콘 (아래 「홈 화면에 추가」 참고)
 test/arabic.test.js      ZWJ 결합·글자 모양 테스트
 test/letters.test.js     자모표 데이터 무결성 테스트
 test/samples.test.js     예시 단어 무결성 테스트
@@ -215,6 +216,38 @@ test/transliterate.test.js  발음 옮기기 테스트
 자모표에서는 글자를 누르면 그 자리에서 네 가지 모양과 부호별 발음이 펼쳐집니다.
 
 ---
+
+## 아이폰 홈 화면에 앱처럼 추가하기
+
+배포한 주소를 **사파리**로 열고 → 공유 버튼(↑) → **「홈 화면에 추가」**.
+
+그러면 북마크가 아니라 앱처럼 동작합니다.
+
+- 주소창 없이 전체 화면 (`display: standalone`, `apple-mobile-web-app-capable`)
+- 노치와 홈 인디케이터를 피해 그립니다 (`viewport-fit=cover` + `env(safe-area-inset-*)`)
+- 상태바 색이 팔레트를 따라갑니다 (라이트/다크 각각)
+- **비행기 모드에서도 뜹니다** — 자모표, 예문 36개, 부호대로 읽기는 전부 브라우저 안에서
+  도는 일이라 서비스 워커가 한 번 담아 두면 인터넷이 없어도 그대로 동작합니다.
+  사진 분석(`/api/read`)만 서버가 필요하고, 그건 캐시하지 않습니다.
+
+```
+public/
+  manifest.webmanifest    이름·아이콘·standalone 설정
+  sw.js                   서비스 워커 (오프라인)
+  icon.svg                아이콘 원본 — 이걸 고치고 아래 PNG 들을 다시 뽑으면 됩니다
+  apple-touch-icon.png    180px, 아이폰 홈 화면이 쓰는 아이콘
+  icon-192.png            manifest
+  icon-512.png            manifest
+  icon-maskable-512.png   manifest (안드로이드 마스크용, 안쪽 안전 영역에 맞춤)
+```
+
+아이콘은 سَ 입니다 — 자음은 먹빛, 파트하는 매더 레드. 앱이 가르치는 단위
+("자음 하나 + 거기 붙은 부호") 자체를 마크로 썼습니다. 부호는 글꼴에 기대지 않고
+직접 그렸습니다. 색을 따로 줘야 하고 글꼴마다 앉는 자리가 달라지기 때문입니다.
+
+> 서비스 워커는 `import.meta.env.PROD` 일 때만 등록합니다 — 개발 중에는 캐시가 방해됩니다.
+> 배포한 것을 고쳤는데 그대로라면 홈 화면 아이콘을 지웠다 다시 추가하거나,
+> 사파리 설정에서 웹 사이트 데이터를 지우면 됩니다.
 
 ## 데모 페이지
 
