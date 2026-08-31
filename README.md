@@ -288,7 +288,9 @@ demo/
 데모는 서버가 전혀 필요 없는 정적 페이지라 GitHub Pages 로 그냥 올라갑니다.
 Vercel 계정도 API 키도 필요 없습니다.
 
-1. 저장소 **Settings → Pages → Source** 를 `GitHub Actions` 로 바꿉니다 (한 번만)
+1. 저장소 **Settings → Pages → Source** 를 `GitHub Actions` 로 바꿉니다 (한 번만).
+   이건 사람이 해야 합니다 — 워크플로 토큰에는 Pages 사이트를 새로 만들 권한이 없어서
+   `Create Pages site failed. Error: Resource not accessible by integration` 로 끝납니다.
 2. `master` 에 머지하면 `.github/workflows/pages.yml` 이 돌면서 `demo/dist/` 를 올립니다
 3. 뜨는 주소(`https://<사용자>.github.io/hello-world/`)를 **사파리**로 열고
    공유(↑) → **홈 화면에 추가**
