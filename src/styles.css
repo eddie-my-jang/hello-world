@@ -194,6 +194,28 @@ html, body {
 }
 .segmented__btn.is-active { background: var(--card); color: var(--ink); font-weight: 600; }
 
+/* ── 예문 고르기 ────────────────────────────────────────────────────────────── */
+.decks { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.deck {
+  flex: 0 0 auto;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--card-2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 7px 13px 8px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.15s linear, color 0.15s linear;
+}
+.deck:hover { border-color: var(--ink-3); }
+.deck[aria-pressed='true'] { border-color: var(--rubric); color: var(--ink); }
+.deck__ar { font-family: var(--f-ar); font-size: 21px; line-height: 1.7; white-space: nowrap; }
+.deck__ko { font-size: 11.5px; white-space: nowrap; }
+
 /* ── 업로더 ─────────────────────────────────────────────────────────────────── */
 .uploader { display: flex; flex-direction: column; gap: 12px; }
 .uploader__buttons { display: flex; gap: 8px; flex-wrap: wrap; }

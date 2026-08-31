@@ -57,11 +57,11 @@
   }
 
   /* ═══ 데이터 ══════════════════════════════════════════════════════════════
-     build.mjs 가 src/lib/letters.js 와 demo/decks.js 를 읽어 앞선 script 에
+     build.mjs 가 src/lib/letters.js 와 src/lib/samples.js 를 읽어 앞선 script 에
      window.__ARABIC_DATA__ 로 넣어 준다. 여기서 다시 옮겨 적지 않는다.
      ═══════════════════════════════════════════════════════════════════════ */
   var DATA = window.__ARABIC_DATA__ || {};
-  var DECKS = DATA.DECKS || [];
+  var DECKS = DATA.SAMPLES || [];
   var LETTERS = DATA.LETTERS || [];
   var FAMILIES = DATA.FAMILIES || [];
   var VOWEL_MARKS = DATA.MARKS || [];

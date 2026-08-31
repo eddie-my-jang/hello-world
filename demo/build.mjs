@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { LETTERS, FAMILIES, MARKS, LONGS, EXTRAS } from '../src/lib/letters.js'
-import { DECKS } from './decks.js'
+import { SAMPLES } from '../src/lib/samples.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repo = join(here, '..')
@@ -31,7 +31,7 @@ function baseCss(css) {
     .trim()
 }
 
-const data = { DECKS, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS }
+const data = { SAMPLES, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS }
 
 // <script> 안에 들어가므로 '<' 를 막아 둔다. 지금 데이터에는 없지만,
 // 나중에 설명글에 "</script>" 같은 문자열이 들어가면 페이지가 깨진다.
@@ -58,5 +58,5 @@ await writeFile(out, page, 'utf8')
 
 const kb = (n) => `${(n / 1024).toFixed(1)}KB`
 console.log(`demo/dist/arabic-app.html  ${kb(page.length)}`)
-console.log(`  예문 ${DECKS.length} · 자음 ${LETTERS.length} · 무리 ${FAMILIES.length} ·`
+console.log(`  예문 ${SAMPLES.length} · 자음 ${LETTERS.length} · 무리 ${FAMILIES.length} ·`
   + ` 부호 ${MARKS.length} · 장모음 ${LONGS.length} · 그밖 ${EXTRAS.length}`)

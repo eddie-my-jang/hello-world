@@ -5,13 +5,15 @@ import Controls from '../components/Controls.jsx'
 import WordChips from '../components/WordChips.jsx'
 import Uploader from '../components/Uploader.jsx'
 import TextEditor from '../components/TextEditor.jsx'
+import SamplePicker from '../components/SamplePicker.jsx'
 import { readImage, readText } from '../lib/api.js'
 import { downscaleImage } from '../lib/image.js'
 import { canSpeakArabic, speak, watchVoices } from '../lib/speech.js'
-import { SAMPLE } from '../lib/samples.js'
+import { SAMPLES } from '../lib/samples.js'
 
 export default function ReaderPage() {
-  const [result, setResult] = useState(SAMPLE)
+  const [result, setResult] = useState(SAMPLES[0])
+  const [sampleIndex, setSampleIndex] = useState(0) // 고른 예문. 분석 결과를 받으면 -1
   const [wordIndex, setWordIndex] = useState(0)
   const [letterIndex, setLetterIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -81,6 +83,15 @@ export default function ReaderPage() {
     })
   }, [atEnd, mode])
 
+  const pickSample = useCallback((i) => {
+    setResult(SAMPLES[i])
+    setSampleIndex(i)
+    setWordIndex(0)
+    setLetterIndex(0)
+    setPlaying(false)
+    setError('')
+  }, [])
+
   const selectWord = useCallback((i) => {
     setWordIndex(i)
     setLetterIndex(0)
@@ -108,6 +119,7 @@ export default function ReaderPage() {
       return
     }
     setResult(data)
+    setSampleIndex(-1)
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
@@ -151,6 +163,11 @@ export default function ReaderPage() {
         <Uploader onPick={handlePick} busy={busy} preview={preview} />
         {busy && <p className="status">사진을 읽고 하라카트를 붙이는 중… (10초쯤 걸립니다)</p>}
         {error && <p className="status status--error">{error}</p>}
+      </section>
+
+      <section className="panel">
+        <span className="editor__label">예문</span>
+        <SamplePicker samples={SAMPLES} index={sampleIndex} onSelect={pickSample} />
       </section>
 
       {word && (
