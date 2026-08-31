@@ -7,3 +7,6 @@ dist
 .env
 .env.local
 .env.*.local
+
+# demo/build.mjs 가 만들어내는 결과물
+demo/dist
