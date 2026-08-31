@@ -1,0 +1,237 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   폰트는 여기 한 곳에서만 참조한다.
+   나중에 번들 폰트로 바꾸려면 아래 @import 를 @font-face 로 갈아 끼우고
+   --font-arabic 값만 바꾸면 된다. 다른 파일은 손댈 필요가 없다.
+   ───────────────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+:root {
+  --font-arabic: 'Noto Naskh Arabic', 'Times New Roman', serif;
+  --font-ui: 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --bg: #11131a;
+  --panel: #1a1d27;
+  --panel-2: #222634;
+  --line: #2e3342;
+  --text: #e8eaf2;
+  --muted: #949bb3;
+
+  --now: #ffd166;      /* 지금 읽는 글자 */
+  --now-bg: rgba(255, 209, 102, 0.12);
+  --done: #6ee7b7;     /* 지나간 글자 */
+  --todo: #4d5468;     /* 아직 안 읽은 글자 */
+  --accent: #7aa2ff;
+  --danger: #ff8a8a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-text-size-adjust: 100%;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 헤더 ─────────────────────────────────────────────────────────────────── */
+.header__title { margin: 0 0 4px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.header__sub { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+/* ── 패널 ─────────────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel--reader { gap: 18px; }
+
+/* ── 업로더 ───────────────────────────────────────────────────────────────── */
+.uploader { display: flex; flex-direction: column; gap: 12px; }
+.uploader__buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.uploader__preview {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #000;
+}
+
+.status { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
+.status--error { color: var(--danger); }
+
+/* ── 읽기판 ───────────────────────────────────────────────────────────────────
+   글자 span 에 절대 주면 안 되는 것: transform, display:inline-block,
+   letter-spacing, margin, padding. 전부 아랍어 이음선을 끊는다.
+   색과 배경색만 바꾼다.
+   ───────────────────────────────────────────────────────────────────────────── */
+.board {
+  font-family: var(--font-arabic);
+  font-size: clamp(48px, 15vw, 88px);
+  line-height: 1.8;
+  text-align: center;
+  padding: 8px 4px;
+  word-break: keep-all;
+  user-select: none;
+}
+
+.board__letter {
+  display: inline;          /* 반드시 inline */
+  cursor: pointer;
+  transition: color 0.15s linear, background-color 0.15s linear;
+}
+
+.board__letter.is-now  { color: var(--now); background-color: var(--now-bg); }
+.board__letter.is-done { color: var(--done); }
+.board__letter.is-todo { color: var(--todo); }
+
+/* ── 단어 정보 ─────────────────────────────────────────────────────────────── */
+.meaning { margin: 0; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.meaning--all { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+
+.word-meta {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.word-meta__kr { font-size: 20px; font-weight: 700; }
+.word-meta__ro { font-size: 14px; color: var(--muted); font-style: italic; }
+.word-meta__m  { font-size: 14px; color: var(--accent); }
+
+/* ── 현재 글자 카드 ────────────────────────────────────────────────────────── */
+.letter-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.letter-card__glyph {
+  font-family: var(--font-arabic);
+  font-size: 56px;
+  line-height: 1.4;
+  color: var(--now);
+  min-width: 72px;
+  text-align: center;
+}
+
+.letter-card__reading { flex: 1; }
+.letter-card__kr { font-size: 30px; font-weight: 700; line-height: 1.2; }
+.letter-card__ro { font-size: 14px; color: var(--muted); font-style: italic; }
+.letter-card__pos { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ── 컨트롤 ───────────────────────────────────────────────────────────────── */
+.controls { display: flex; flex-direction: column; gap: 12px; }
+.controls__row { display: flex; gap: 8px; align-items: center; justify-content: center; }
+.controls__row--wrap { flex-wrap: wrap; gap: 14px; }
+
+.btn {
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background-color 0.12s linear, opacity 0.12s linear;
+}
+.btn:hover:not(:disabled) { background: #2b3040; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0d1220;
+  font-weight: 700;
+}
+.btn--primary:hover:not(:disabled) { background: #8fb1ff; }
+
+.field { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.field__label { white-space: nowrap; }
+.field__value { min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+.field input[type='range'] { width: 130px; accent-color: var(--accent); }
+
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.segmented__btn {
+  font: inherit;
+  font-size: 14px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.segmented__btn.is-active { background: var(--panel-2); color: var(--text); font-weight: 700; }
+
+/* ── 단어 칩 ──────────────────────────────────────────────────────────────── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.chip {
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.chip.is-active { border-color: var(--accent); color: var(--text); }
+.chip__ar { font-family: var(--font-arabic); font-size: 22px; line-height: 1.6; }
+.chip__kr { font-size: 12px; }
+
+/* ── 편집창 ───────────────────────────────────────────────────────────────── */
+.editor { display: flex; flex-direction: column; gap: 8px; }
+.editor__label { font-size: 14px; color: var(--muted); }
+.editor__input {
+  font-family: var(--font-arabic);
+  font-size: 26px;
+  line-height: 1.9;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+.editor__input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.editor__actions { display: flex; align-items: center; gap: 10px; }
+.editor__hint { font-size: 13px; color: var(--now); }
+
+/* ── 푸터 ─────────────────────────────────────────────────────────────────── */
+.footer { color: var(--muted); font-size: 13px; text-align: center; line-height: 1.6; }
+.footer p { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
