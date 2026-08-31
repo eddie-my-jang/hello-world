@@ -93,3 +93,24 @@ export function splitIntoLetters(word) {
   }
   return out
 }
+
+/** 이 글자가 뒤 글자로 이어지는가 (자모표에서 모양을 만들 때 쓴다) */
+export function letterConnectsForward(ch) {
+  return isArabicLetter(ch) && !NON_CONNECTING.has(ch)
+}
+
+/**
+ * 글자 하나의 네 가지 모양을 만든다.
+ * 미리 그려 둔 표현형(U+FE70 블록)을 쓰지 않고, 읽기판과 똑같이 ZWJ 로
+ * 자리를 알려 준다. 그래서 없는 모양은 저절로 null 이 된다.
+ */
+export function letterForms(ch) {
+  const forward = letterConnectsForward(ch)
+  const backward = isArabicLetter(ch) && ch !== '\u0621' // 함자는 어느 쪽에도 붙지 않는다
+  return {
+    alone: ch,
+    init: forward ? ch + ZWJ : null,
+    mid: forward && backward ? ZWJ + ch + ZWJ : null,
+    fin: backward ? ZWJ + ch : null,
+  }
+}

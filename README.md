@@ -4,7 +4,15 @@
 **맨 오른쪽 글자부터 한 글자씩** 색을 칠하며 한글 발음을 보여 줍니다.
 아랍 문자를 막 배우기 시작한 한국어 사용자를 위한 도구입니다.
 
-Vite + React, 상태 관리는 `useState` 만. UI 는 전부 한국어입니다.
+페이지는 둘입니다.
+
+| 경로 | 페이지 | 하는 일 |
+| --- | --- | --- |
+| `#/` | 읽기판 | 사진 속 단어를 오른쪽부터 한 글자씩 짚어 가며 읽습니다 |
+| `#/letters` | 자모표 | 자음 28자와 모음 부호를 눌러서 찾아봅니다 |
+
+Vite + React, 상태 관리는 `useState` 만. 라우팅은 `src/lib/router.js` 의 해시 라우터
+20줄로, 정적 호스팅에서 서버 리라이트 설정 없이 그대로 동작합니다. UI 는 전부 한국어입니다.
 
 ---
 
@@ -55,6 +63,17 @@ npm run build
 `كِتَاب` 는 이렇게 나갑니다 — `كِ‍` / `‍تَ‍` / `‍ا` / `ب`.
 `ا` 뒤에서 이음선이 끊기는 것이 **정상**입니다.
 
+> **실측해 보니 크로미움은 ZWJ 없이도 이어 그립니다.**
+> 같은 단어를 ZWJ 있이/없이 그려 폭을 재 보면 완전히 같습니다(161px). 색·배경을
+> 다르게 준 상태에서도 마찬가지입니다. CSS Text 명세는 요소 경계를 넘는 셰이핑을
+> *허용하되 강제하지 않아서* 엔진마다 다릅니다. 그러니 ZWJ 는 크롬에서 눈에 보이는
+> 일을 하는 코드가 아니라, **그렇게 하지 않는 엔진을 위한 보험**입니다.
+> 사파리·파이어폭스에서는 아직 확인하지 못했습니다.
+>
+> 자모표의 네 가지 모양(홀로·첫·가운데·끝)은 이 ZWJ 규칙으로 그때그때 만듭니다
+> (`letterForms()`). 표를 손으로 채웠다면 뒤로 이어지지 않는 글자에서 반드시
+> 틀렸을 자리라, 여기서는 ZWJ 가 확실히 제 일을 합니다.
+
 > **하이라이트할 때 지켜야 할 것**
 > 컨테이너는 `dir="rtl"`, 글자 span 은 `display: inline` 을 유지하고
 > **색과 배경색만** 바꿉니다. `transform`, `display: inline-block`, `letter-spacing`,
@@ -93,11 +112,17 @@ grep -ri "anthropic\|sk-ant" dist/     # 아무것도 나오지 않아야 정상
 api/read.js              서버리스 프록시 — 키를 쥐고 Claude 를 호출하는 유일한 곳
 vite.config.js           개발 서버에서 /api/read 를 같은 파일로 띄우는 미들웨어
 src/
-  lib/arabic.js          ZWJ 결합 처리, 하라카트 제거, 글자 분해
+  App.jsx                셸 — 탭과 라우팅
+  lib/router.js          해시 라우터
+  lib/arabic.js          ZWJ 결합 처리, 글자 모양 생성, 하라카트 제거, 글자 분해
   lib/api.js             /api/read 호출, JSON 파싱(코드펜스 제거 방어)
   lib/image.js           업로드 전 canvas 축소 (최대 1000px, JPEG 0.8)
   lib/speech.js          Web Speech API (ar-SA)
-  lib/samples.js         초기 예시 단어
+  lib/samples.js         읽기판 초기 예시 단어
+  lib/letters.js         자모표 데이터 (자음 28자, 부호, 장모음, 그밖의 글자)
+  pages/
+    ReaderPage.jsx       읽기판
+    LettersPage.jsx      자모표
   components/
     ReadingBoard.jsx     읽기판 — RTL 렌더링 + 글자 하이라이트
     LetterCard.jsx       현재 글자 크게 + 한글 + 로마자
@@ -105,9 +130,23 @@ src/
     WordChips.jsx        단어 목록 (눌러서 이동)
     Uploader.jsx         사진 업로드 (모바일에서 카메라 열림)
     TextEditor.jsx       원문 수정 · 직접 입력
-  styles.css             폰트를 참조하는 유일한 파일
-test/arabic.test.js      ZWJ 결합 로직 테스트
+    LetterTile.jsx       자모표 격자 한 칸
+    LetterDetail.jsx     펼친 글자 — 네 모양 + 부호별 발음
+    ItemCard.jsx         부호·장모음·그밖의 글자 줄 카드
+  styles.css             팔레트와 폰트를 참조하는 유일한 파일
+test/arabic.test.js      ZWJ 결합·글자 모양 테스트
+test/letters.test.js     자모표 데이터 무결성 테스트
 ```
+
+## 팔레트
+
+필사본 안료에서 가져왔습니다. 본문은 먹, 지금 읽는 글자는 루브리케이션(모음 부호를
+붉은 안료로 찍던 관습)의 매더 레드, 보조 정보는 라피스 블루.
+
+밝은 바탕을 기본으로 삼은 데는 이유가 있습니다 — 하라카트는 가는 획이라 어두운
+바탕에 밝은 선으로 그리면 번져서 파트하와 카스라가 구분되지 않습니다. 다크 모드는
+`prefers-color-scheme` 로 따라갑니다. 색은 전부 `src/styles.css` 맨 위 토큰이라
+한곳에서 바꿀 수 있습니다.
 
 ## API 응답 스키마
 
@@ -145,6 +184,7 @@ test/arabic.test.js      ZWJ 결합 로직 테스트
 | `→` | 이전 글자 |
 
 글자를 직접 눌러 그 위치로 건너뛸 수도 있습니다.
+자모표에서는 글자를 누르면 그 자리에서 네 가지 모양과 부호별 발음이 펼쳐집니다.
 
 ---
 

@@ -20,7 +20,7 @@ export default function Controls({
           ‹ 이전
         </button>
         <button type="button" className="btn btn--primary" onClick={onTogglePlay}>
-          {playing ? '⏸ 멈춤' : '▶ 재생'}
+          {playing ? '멈춤' : '▶ 재생'}
         </button>
         <button type="button" className="btn" onClick={onNext} disabled={!canNext} aria-label="다음 글자">
           다음 ›
