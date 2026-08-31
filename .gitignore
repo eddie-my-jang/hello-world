@@ -1,0 +1,13 @@
+node_modules
+dist
+.vercel
+.DS_Store
+
+# 로컬 개발용 시크릿 — 절대 커밋 금지
+.env
+.env.local
+.env.*.local
+
+# demo/build.mjs 가 만들어내는 결과물
+demo/dist
+demo/build

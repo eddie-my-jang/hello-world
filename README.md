@@ -1,140 +1,334 @@
-# Welcome to GitHub
+# 아랍어 읽기 (Arabic Reader)
 
-Welcome to GitHub—where millions of developers work together on software. Ready to get started? Let’s learn how this all works by building and publishing your first GitHub Pages website!
+사진을 올리면 사진 속 아랍어를 인식해, 앱에서 그 단어를 다시 그리고
+**맨 오른쪽 글자부터 한 글자씩** 색을 칠하며 한글 발음을 보여 줍니다.
+아랍 문자를 막 배우기 시작한 한국어 사용자를 위한 도구입니다.
 
-## Repositories
+페이지는 둘입니다.
 
-Right now, we’re in your first GitHub **repository**. A repository is like a folder or storage space for your project. Your project's repository contains all its files such as code, documentation, images, and more. It also tracks every change that you—or your collaborators—make to each file, so you can always go back to previous versions of your project if you make any mistakes.
+| 경로 | 페이지 | 하는 일 |
+| --- | --- | --- |
+| `#/` | 읽기판 | 사진 속 단어를 오른쪽부터 한 글자씩 짚어 가며 읽습니다 |
+| `#/letters` | 자모표 | 자음 28자와 모음 부호를 눌러서 찾아봅니다 |
 
-This repository contains three important files: The HTML code for your first website on GitHub, the CSS stylesheet that decorates your website with colors and fonts, and the **README** file. It also contains an image folder, with one image file.
+Vite + React, 상태 관리는 `useState` 만. 라우팅은 `src/lib/router.js` 의 해시 라우터
+20줄로, 정적 호스팅에서 서버 리라이트 설정 없이 그대로 동작합니다. UI 는 전부 한국어입니다.
 
-## Describe your project
+---
 
-You are currently viewing your project's **README** file. **_README_** files are like cover pages or elevator pitches for your project. They are written in plain text or [Markdown language](https://guides.github.com/features/mastering-markdown/), and usually include a paragraph describing the project, directions on how to use it, who authored it, and more.
+## 빠르게 실행하기
 
-[Learn more about READMEs](https://help.github.com/en/articles/about-readmes)
-
-## Your first website
-
-**GitHub Pages** is a free and easy way to create a website using the code that lives in your GitHub repositories. You can use GitHub Pages to build a portfolio of your work, create a personal website, or share a fun project that you coded with the world. GitHub Pages is automatically enabled in this repository, but when you create new repositories in the future, the steps to launch a GitHub Pages website will be slightly different.
-
-[Learn more about GitHub Pages](https://pages.github.com/)
-
-## Rename this repository to publish your site
-
-We've already set-up a GitHub Pages website for you, based on your personal username. This repository is called `hello-world`, but you'll rename it to: `username.github.io`, to match your website's URL address. If the first part of the repository doesn’t exactly match your username, it won’t work, so make sure to get it right.
-
-Let's get started! To update this repository’s name, click the `Settings` tab on this page. This will take you to your repository’s settings page. 
-
-![repo-settings-image](https://user-images.githubusercontent.com/18093541/63130482-99e6ad80-bf88-11e9-99a1-d3cf1660b47e.png)
-
-Under the **Repository Name** heading, type: `username.github.io`, where username is your username on GitHub. Then click **Rename**—and that’s it. When you’re done, click your repository name or browser’s back button to return to this page.
-
-<img width="1039" alt="rename_screenshot" src="https://user-images.githubusercontent.com/18093541/63129466-956cc580-bf85-11e9-92d8-b028dd483fa5.png">
-
-Once you click **Rename**, your website will automatically be published at: https://your-username.github.io/. The HTML file—called `index.html`—is rendered as the home page and you'll be making changes to this file in the next step.
-
-Congratulations! You just launched your first GitHub Pages website. It's now live to share with the entire world
-
-## Making your first edit
-
-When you make any change to any file in your project, you’re making a **commit**. If you fix a typo, update a filename, or edit your code, you can add it to GitHub as a commit. Your commits represent your project’s entire history—and they’re all saved in your project’s repository.
-
-With each commit, you have the opportunity to write a **commit message**, a short, meaningful comment describing the change you’re making to a file. So you always know exactly what changed, no matter when you return to a commit.
-
-## Practice: Customize your first GitHub website by writing HTML code
-
-Want to edit the site you just published? Let’s practice commits by introducing yourself in your `index.html` file. Don’t worry about getting it right the first time—you can always build on your introduction later.
-
-Let’s start with this template:
-
-```
-<p>Hello World! I’m [username]. This is my website!</p>
+```bash
+npm install
+cp .env.example .env.local   # 그리고 ANTHROPIC_API_KEY 를 채웁니다
+npm run dev                  # http://localhost:5173
 ```
 
-To add your introduction, copy our template and click the edit pencil icon at the top right hand corner of the `index.html` file.
+키가 없어도 앱은 뜹니다. **예시 단어 36개**가 예문 칩으로 올라와 있어 사진 없이
+재생·이전·다음·속도를 그대로 눌러 볼 수 있습니다. 사진 분석과 원문 재분석만 키를 필요로 합니다.
 
-<img width="997" alt="edit-this-file" src="https://user-images.githubusercontent.com/18093541/63131820-0794d880-bf8d-11e9-8b3d-c096355e9389.png">
+예시 단어는 `src/lib/samples.js` 에 있고 모양이 `/api/read` 응답과 같습니다.
+글자별 한글·로마자는 손으로 적지 않고 `src/lib/transliterate.js` 가 만들어 넣었습니다 —
+단어 36개면 글자 항목이 140개 가까이 되어 손으로는 검증이 안 됩니다.
+`test/transliterate.test.js` 가 그 값을 지금도 똑같이 만들어 내는지 지켜서, 둘 중 하나를
+누가 손으로 고치면 바로 드러납니다.
 
+```bash
+npm test        # 글자 결합(ZWJ)과 자모표 데이터 테스트
+npm run build
+npm run demo    # 서버 없이 열리는 단일 HTML 데모 (아래 참고)
+```
 
-Delete this placeholder line:
+---
+
+## 이 도메인의 까다로운 점과 해결 방식
+
+### 1. 아랍어는 단모음(하라카트)을 생략해서 쓴다
+
+`كتب` 하나가 kataba(그가 썼다) / kutiba(쓰여졌다) / kutub(책들) 중 무엇이든 될 수 있습니다.
+글자만 봐서는 발음이 정해지지 않으니, 문맥을 읽고 부호를 **복원**해야 합니다.
+
+→ Claude 비전 호출 **한 번**으로 "인식 + 하라카트 삽입 + 글자 분해 + 한글/로마자 발음"을
+통째로 받습니다. 별도의 OCR 라이브러리는 쓰지 않습니다.
+
+**직접 입력한 글에는 두 갈래가 있습니다.**
+
+| 버튼 | 하는 일 | 필요한 것 |
+| --- | --- | --- |
+| 부호대로 바로 읽기 | 붙어 있는 부호를 그대로 읽습니다 | 없음 (브라우저 안에서) |
+| 하라카트 붙여 분석 | 빠진 부호를 문맥으로 채워 넣습니다 | 서버 + 키 |
+
+앞쪽은 `src/lib/transliterate.js` 가 합니다. 자모표(`src/lib/letters.js`)의 자음별
+발음표를 그대로 써서, 자모표가 `بِ` 를 「비」라고 가르쳐 놓고 읽기판이 달리 읽는 일이
+생기지 않습니다. 부호에 따라 파트하·카스라·담마·수쿤을 고르고, 탄윈은 종성 ㄴ 을
+더하고(바 → 반), 샷다는 수쿤형과 모음형을 겹치고(르 + 리 = 르리), 홀로 선
+alif/waw/ya 는 앞 모음을 보고 장모음인지 이중모음인지 가릅니다.
+
+**모르는 것은 만들어 내지 않습니다.** 부호가 없는 가운데 글자는 모음을 정할 수 없으므로
+초성 하나만 남깁니다 — `كتب` 는 「ㅋ ㅌ 브」로 나옵니다. "자음은 알지만 모음은 모른다"는
+뜻이고, 그 자리를 채우는 것이 위 표의 아래쪽, 곧 Claude 의 일입니다.
+(단어 끝의 부호 없는 글자는 멈춰 읽는 형태라 수쿤으로 읽습니다 — `كِتَاب` 의 ب 는 「브」.)
+
+### 2. 아랍어는 필기체라 OCR 이 글자별 좌표를 주지 않는다
+
+→ 사진 위에 직접 칠하지 않습니다. 인식한 텍스트를 앱이 자체 폰트(Noto Naskh Arabic)로
+다시 그리고, 그 위에서 하이라이트합니다. 사진은 참고용 썸네일로만 남습니다.
+
+### 3. 글자를 `<span>` 으로 쪼개면 단어가 끊어져 보인다
+
+브라우저는 각 span 을 독립된 텍스트 런으로 보고 전부 **고립형**으로 그립니다.
+`كتاب` 이 `ك ت ا ب` 처럼 뿔뿔이 흩어집니다.
+
+→ 각 조각 앞뒤에 **ZWJ(U+200D)** 를 넣어 어중형/어말형을 강제합니다 (`src/lib/arabic.js`).
+- 앞 글자가 "뒤로 이어지는 글자"일 때만 **앞에** ZWJ
+- 현재 글자가 뒤로 이어지고 **다음 글자가 있을 때만** 뒤에 ZWJ
+- 뒤로 이어지지 않는 글자: `ا د ذ ر ز و ؤ أ إ آ ة ى ء ٱ`
+
+`كِتَاب` 는 이렇게 나갑니다 — `كِ‍` / `‍تَ‍` / `‍ا` / `ب`.
+`ا` 뒤에서 이음선이 끊기는 것이 **정상**입니다.
+
+> **실측해 보니 크로미움은 ZWJ 없이도 이어 그립니다.**
+> 같은 단어를 ZWJ 있이/없이 그려 폭을 재 보면 완전히 같습니다(161px). 색·배경을
+> 다르게 준 상태에서도 마찬가지입니다. CSS Text 명세는 요소 경계를 넘는 셰이핑을
+> *허용하되 강제하지 않아서* 엔진마다 다릅니다. 그러니 ZWJ 는 크롬에서 눈에 보이는
+> 일을 하는 코드가 아니라, **그렇게 하지 않는 엔진을 위한 보험**입니다.
+> 사파리·파이어폭스에서는 아직 확인하지 못했습니다.
+>
+> 자모표의 네 가지 모양(홀로·첫·가운데·끝)은 이 ZWJ 규칙으로 그때그때 만듭니다
+> (`letterForms()`). 표를 손으로 채웠다면 뒤로 이어지지 않는 글자에서 반드시
+> 틀렸을 자리라, 여기서는 ZWJ 가 확실히 제 일을 합니다.
+
+> **하이라이트할 때 지켜야 할 것**
+> 컨테이너는 `dir="rtl"`, 글자 span 은 `display: inline` 을 유지하고
+> **색과 배경색만** 바꿉니다. `transform`, `display: inline-block`, `letter-spacing`,
+> `margin`/`padding` 을 주면 이음선이 다시 끊깁니다.
+
+---
+
+## API 키 처리
+
+키는 **서버에만** 둡니다.
+
+- `ANTHROPIC_API_KEY` 는 서버리스 함수 `api/read.js` 의 `process.env` 에서만 읽습니다.
+- 클라이언트 코드에는 키가 없고, `VITE_` 환경변수도 쓰지 않습니다.
+  번들은 누구나 열어 볼 수 있으므로 거기 들어간 값은 전부 유출된 값입니다.
+- 앱은 base64 이미지(또는 아랍어 텍스트)를 `/api/read` 로만 보냅니다.
+- 서버에서 **이미지 크기 제한**(4MB)과 **IP 당 호출 횟수 제한**(기본 10분에 20회)을 겁니다.
+
+확인:
+
+```bash
+npm run build
+grep -ri "anthropic\|sk-ant" dist/     # 아무것도 나오지 않아야 정상
+```
+
+로컬 개발은 `.env.local` 을 쓰고, 이 파일은 `.gitignore` 에 들어 있습니다.
+
+> 호출 횟수 제한은 서버리스 인스턴스의 메모리에 저장됩니다.
+> 인스턴스마다 따로 세므로 완벽하지 않습니다. 실수로 폭주하는 것을 막는 1차 방어선이고,
+> 정식 운영에서는 KV/Redis 같은 공용 저장소로 바꾸세요.
+
+---
+
+## 폴더 구조
 
 ```
-<p>Welcome to your first GitHub Pages website!</p>
+api/read.js              서버리스 프록시 — 키를 쥐고 Claude 를 호출하는 유일한 곳
+vite.config.js           개발 서버에서 /api/read 를 같은 파일로 띄우는 미들웨어
+src/
+  App.jsx                셸 — 탭과 라우팅
+  lib/router.js          해시 라우터
+  lib/arabic.js          ZWJ 결합 처리, 글자 모양 생성, 하라카트 제거, 글자 분해
+  lib/transliterate.js   붙어 있는 부호대로 한글·로마자로 옮기기 (서버 없이)
+  lib/api.js             /api/read 호출, JSON 파싱(코드펜스 제거 방어)
+  lib/image.js           업로드 전 canvas 축소 (최대 1000px, JPEG 0.8)
+  lib/speech.js          Web Speech API (ar-SA)
+  lib/samples.js         읽기판 초기 예시 단어
+  lib/letters.js         자모표 데이터 (자음 28자, 부호, 장모음, 그밖의 글자)
+  pages/
+    ReaderPage.jsx       읽기판
+    LettersPage.jsx      자모표
+  components/
+    ReadingBoard.jsx     읽기판 — RTL 렌더링 + 글자 하이라이트
+    LetterCard.jsx       현재 글자 크게 + 한글 + 로마자
+    Controls.jsx         재생/멈춤·이전/다음·속도·모드·듣기
+    WordChips.jsx        단어 목록 (눌러서 이동)
+    Uploader.jsx         사진 업로드 (모바일에서 카메라 열림)
+    TextEditor.jsx       원문 수정 · 직접 입력
+    SamplePicker.jsx     예문 고르기
+    LetterTile.jsx       자모표 격자 한 칸
+    LetterDetail.jsx     펼친 글자 — 네 모양 + 부호별 발음
+    ItemCard.jsx         부호·장모음·그밖의 글자 줄 카드
+  styles.css             팔레트와 폰트를 참조하는 유일한 파일
+public/                  manifest·서비스 워커·아이콘 (아래 「홈 화면에 추가」 참고)
+test/arabic.test.js      ZWJ 결합·글자 모양 테스트
+test/letters.test.js     자모표 데이터 무결성 테스트
+test/samples.test.js     예시 단어 무결성 테스트
+test/transliterate.test.js  발음 옮기기 테스트
 ```
 
-Then, paste the template to line 15 and fill in the blanks.
+## 팔레트
 
-<img width="1032" alt="edit-githuboctocat-index" src="https://user-images.githubusercontent.com/18093541/63132339-c3a2d300-bf8e-11e9-8222-59c2702f6c42.png">
+필사본 안료에서 가져왔습니다. 본문은 먹, 지금 읽는 글자는 루브리케이션(모음 부호를
+붉은 안료로 찍던 관습)의 매더 레드, 보조 정보는 라피스 블루.
 
+밝은 바탕을 기본으로 삼은 데는 이유가 있습니다 — 하라카트는 가는 획이라 어두운
+바탕에 밝은 선으로 그리면 번져서 파트하와 카스라가 구분되지 않습니다. 다크 모드는
+`prefers-color-scheme` 로 따라갑니다. 색은 전부 `src/styles.css` 맨 위 토큰이라
+한곳에서 바꿀 수 있습니다.
 
-When you’re done, scroll down to the `Commit changes` section near the bottom of the edit page. Add a short message explaining your change, like "Add my introduction", then click `Commit changes`.
+## API 응답 스키마
 
+`api/read.js` 가 모델에게 요구하는 모양입니다.
 
-<img width="1030" alt="add-my-username" src="https://user-images.githubusercontent.com/18093541/63131801-efbd5480-bf8c-11e9-9806-89273f027d16.png">
+```json
+{
+  "t": "전체 뜻",
+  "w": [
+    {
+      "a": "하라카트 붙인 단어",
+      "k": "한글발음",
+      "r": "로마자",
+      "m": "뜻",
+      "l": [{ "a": "글자", "k": "한글", "r": "로마자" }]
+    }
+  ]
+}
+```
 
-Once you click `Commit changes`, your changes will automatically be published on your GitHub Pages website. Refresh the page to see your new changes live in action.
+- `l` 의 한 항목 = 자음 하나 + 거기 붙은 부호(fatha/kasra/damma/sukun/shadda)
+- 장모음 alif/waw/ya 는 별도 항목이고 한글은 `―`
+- 한 번에 최대 8단어
+- `l` 의 첫 원소가 단어의 **가장 오른쪽** 글자입니다
 
-:tada: You just made your first commit! :tada:
+응답은 `output_config.format` 의 JSON 스키마로 강제하고,
+그래도 펜스나 군더더기가 섞여 올 경우를 대비해 `src/lib/api.js` 가 방어적으로 파싱합니다.
 
-## Work with GitHub on your computer using GitHub Desktop
+## 조작
 
-**GitHub Desktop** is a free app from GitHub for Windows and Mac that allows you to easily work with your GitHub repositories from your computer. You just saw how you can commit to a repository from GitHub.com, but most developers do the majority of their work from their computer (locally) before pushing it up to GitHub. So let’s try that out!
+| 키 | 동작 |
+| --- | --- |
+| `Space` | 재생 / 멈춤 |
+| `←` | 다음 글자 (RTL 이라 왼쪽이 앞으로) |
+| `→` | 이전 글자 |
 
-[Download GitHub Desktop](https://desktop.github.com/)
+글자를 직접 눌러 그 위치로 건너뛸 수도 있습니다.
+자모표에서는 글자를 누르면 그 자리에서 네 가지 모양과 부호별 발음이 펼쳐집니다.
 
-## Practice: Use GitHub Desktop and an editor to make a change from your computer
+---
 
-Start by downloading GitHub Desktop if you haven’t already done so, and install it on your computer. Go through the GitHub Desktop onboarding steps, and when you get to the “Let’s get started” screen, go ahead and choose the repository you were just working with on GitHub.com, and click “Clone.”
+## 아이폰 홈 화면에 앱처럼 추가하기
 
-### Using an editor to make changes
+배포한 주소를 **사파리**로 열고 → 공유 버튼(↑) → **「홈 화면에 추가」**.
 
-Let’s make sure you have a text editor on your computer - this is what you'll use to actually make changes to your files. If you already know you have an editor, then skip to the next step. Otherwise, download and install either [Visual Studio Code](https://code.visualstudio.com/) or [Atom](https://atom.io/) and restart GitHub Desktop before proceeding to the next step.
+그러면 북마크가 아니라 앱처럼 동작합니다.
 
-Let’s make a change to your GitHub Pages site, just like you did on GitHub.com, except this time we’re going to do it all from your computer. From GitHub Desktop, click the “Open in…” button in the middle of the screen to “open the repository in your external editor” that you just downloaded. 
+- 주소창 없이 전체 화면 (`display: standalone`, `apple-mobile-web-app-capable`)
+- 노치와 홈 인디케이터를 피해 그립니다 (`viewport-fit=cover` + `env(safe-area-inset-*)`)
+- 상태바 색이 팔레트를 따라갑니다 (라이트/다크 각각)
+- **비행기 모드에서도 뜹니다** — 자모표, 예문 36개, 부호대로 읽기는 전부 브라우저 안에서
+  도는 일이라 서비스 워커가 한 번 담아 두면 인터넷이 없어도 그대로 동작합니다.
+  사진 분석(`/api/read`)만 서버가 필요하고, 그건 캐시하지 않습니다.
 
-![Open-in-editor](https://user-images.githubusercontent.com/721500/63188833-82fb9600-c030-11e9-8777-a67c1713d59f.png)
+```
+public/
+  manifest.webmanifest    이름·아이콘·standalone 설정
+  sw.js                   서비스 워커 (오프라인)
+  icon.svg                아이콘 원본 — 이걸 고치고 아래 PNG 들을 다시 뽑으면 됩니다
+  apple-touch-icon.png    180px, 아이폰 홈 화면이 쓰는 아이콘
+  icon-192.png            manifest
+  icon-512.png            manifest
+  icon-maskable-512.png   manifest (안드로이드 마스크용, 안쪽 안전 영역에 맞춤)
+```
 
-In the left sidebar, click the `index.html` file to open it, and go ahead and add another line. Maybe, “Building websites is fun! You should try it too!” or whatever you want to add. 
+아이콘은 سَ 입니다 — 자음은 먹빛, 파트하는 매더 레드. 앱이 가르치는 단위
+("자음 하나 + 거기 붙은 부호") 자체를 마크로 썼습니다. 부호는 글꼴에 기대지 않고
+직접 그렸습니다. 색을 따로 줘야 하고 글꼴마다 앉는 자리가 달라지기 때문입니다.
 
-![Make-changes](https://user-images.githubusercontent.com/721500/63188832-82fb9600-c030-11e9-9f7b-7d15385a16f0.png)
+> 서비스 워커는 `import.meta.env.PROD` 일 때만 등록합니다 — 개발 중에는 캐시가 방해됩니다.
+> 배포한 것을 고쳤는데 그대로라면 홈 화면 아이콘을 지웠다 다시 추가하거나,
+> 사파리 설정에서 웹 사이트 데이터를 지우면 됩니다.
 
-Now switch back to GitHub Desktop, and you should see the change you made.
+## 데모 페이지
 
-![View-changes](https://user-images.githubusercontent.com/721500/63188835-82fb9600-c030-11e9-8980-43a8231ca23a.png)
+읽기판과 자모표를 탭 하나로 합친, **서버 없이 열리는 단일 HTML** 을 뽑을 수 있습니다.
+키 없이 남에게 보여 주거나, 다른 브라우저(특히 아이폰 사파리)에서 글자 결합을 확인할 때 씁니다.
 
-### Commit your changes
+```bash
+npm run demo        # → demo/dist/arabic-app.html  (파일을 그대로 열면 됩니다)
+```
 
-Now you can commit your changes by typing a message in the `Summary` box at the bottom left, and then click the blue `Commit` button below that.
+```
+demo/
+  build.mjs             조립 스크립트
+  template.html         틀 (마크업과 데모 전용 CSS)
+  app.js                바닐라 JS 로 옮긴 읽기판 + 자모표
+  manifest.webmanifest  홈 화면에 추가했을 때의 이름·아이콘
+  sw.js                 서비스 워커 (오프라인)
+  dist/                 Pages 에 올라가는 사이트 (커밋하지 않습니다)
+  build/                아티팩트용 조각 (커밋하지 않습니다)
+```
 
-![Commit-changes](https://user-images.githubusercontent.com/721500/63188831-8262ff80-c030-11e9-809a-f87d8b544935.png)
+결과물이 둘입니다. `dist/index.html` 은 `<head>` 까지 갖춘 온전한 문서라 홈 화면에
+추가하면 앱처럼 뜨고 오프라인에서도 열립니다. `build/artifact.html` 은 아티팩트로
+올릴 조각인데, 그쪽은 `<head>` 를 호스트가 쥐고 있어 manifest 나 서비스 워커를
+넣을 수 없습니다.
 
-### Push your changes to GitHub.com
+**팔레트와 데이터를 앱 소스에서 그대로 읽어 옵니다** — `src/styles.css`,
+`src/lib/letters.js`, `src/lib/samples.js`. 데모에 옮겨 적어 두면 앱을 고칠 때마다
+조용히 어긋나기 때문입니다. 앱을 고쳤으면 `npm run demo` 를 다시 돌리면 됩니다.
 
-One of the great things about working on things on your computer is that you get to control when other people see them. Now let’s push your commit to GitHub.com as well so it’s saved there and you can publish it to your site. Click the “Push origin” button to push your commit to GitHub.com. 
+데모에 없는 것: 사진 업로드와 하라카트 복원. 둘 다 서버가 필요합니다.
+대신 붙여넣은 아랍어를 앱과 **같은 코드**로 읽어 줍니다 (`build.mjs` 가
+`src/lib/transliterate.js` 를 페이지 안에 그대로 넣습니다). 또
+**결합 검사** 칸이 지금 이 브라우저가 ZWJ 없이도 글자를 이어 그리는지 직접 재서 알려 줍니다.
 
-![Push-to-GitHub](https://user-images.githubusercontent.com/721500/63188834-82fb9600-c030-11e9-9d8e-6c6ed6d48504.png)
+## 데모를 아이폰·아이패드에 올리기 (GitHub Pages)
 
-Now click the “View on GitHub” button to get back to your repository’s page on GitHub.com.
+데모는 서버가 전혀 필요 없는 정적 페이지라 GitHub Pages 로 그냥 올라갑니다.
+Vercel 계정도 API 키도 필요 없습니다.
 
-![View-on-GitHub](https://user-images.githubusercontent.com/721500/63188836-82fb9600-c030-11e9-9bc5-cf304398500d.png)
+1. 저장소 **Settings → Pages → Source** 를 `GitHub Actions` 로 바꿉니다 (한 번만)
+2. `master` 에 머지하면 `.github/workflows/pages.yml` 이 돌면서 `demo/dist/` 를 올립니다
+3. 뜨는 주소(`https://<사용자>.github.io/hello-world/`)를 **사파리**로 열고
+   공유(↑) → **홈 화면에 추가**
 
-### Deploy and see your changes live on your GitHub Pages website!
+그러면 주소창 없는 전체 화면 앱이 되고, **비행기 모드에서도 열립니다.**
+자모표·예문 36개·부호대로 읽기가 전부 브라우저 안에서 도는 일이라 그렇습니다.
+웹폰트는 처음 온라인으로 열 때 담아 둡니다.
 
-Once you commit your changes, they are automatically published on your GitHub Pages website. Refresh your browser to see it live!
+경로를 전부 상대(`./`)로 씁니다 — Pages 는 도메인 루트가 아니라
+`/<저장소이름>/` 아래에 붙기 때문에 절대 경로로 적으면 전부 깨집니다.
 
-### Celebrate!
+> 데모에는 사진 분석이 없습니다. 그건 `/api/read` 서버리스 함수가 필요해서
+> Pages 로는 못 올립니다. 사진까지 쓰려면 아래 Vercel 배포를 하세요.
 
-Hooray! Now you have your repository linked between your computer and GitHub.com. In the future, you can use GitHub Desktop to push any changes you decide to make from your computer.
+## 배포 (Vercel)
 
-## Extra Credit: Keep on building!
+`api/read.js` 는 Vercel Node 서버리스 함수 시그니처를 그대로 따릅니다.
+저장소를 연결하고 환경변수에 `ANTHROPIC_API_KEY` 만 넣으면 됩니다.
+빌드 명령과 출력 디렉터리는 기본값(`npm run build`, `dist`)으로 잡힙니다.
 
-Change the placeholder Octocat gif on your GitHub Pages website by [creating your own personal Octocat emoji](https://myoctocat.com/build-your-octocat/) or [choose a different Octocat gif from our logo library here](https://octodex.github.com/). Add that image to line 12 of your `index.html` file, in place of the `<img src=` link.
+개발 서버에서는 `vite.config.js` 의 미들웨어가 **같은 파일**을 불러 쓰므로,
+로컬과 배포 환경의 동작이 갈리지 않습니다.
 
-Want to add even more code and fun styles to your GitHub Pages website? [Follow these instructions](https://github.com/github/personal-website) to build a fully-fledged static website.
+## 설정
 
-![octocat](./images/create-octocat.png)
+| 환경변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | (필수) | 서버 전용 |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | 사용할 모델 |
+| `READ_RATE_LIMIT` | `20` | 창 하나당 IP 별 최대 호출 수 |
+| `READ_RATE_WINDOW_MS` | `600000` | 창 길이 (ms) |
 
-## Everything you need to know about GitHub
+## 일부러 하지 않은 것
 
-Getting started is the hardest part. If there’s anything you’d like to know as you get started with GitHub, try searching [GitHub Help](https://help.github.com). Our documentation has tutorials on everything from changing your repository settings to configuring GitHub from your command line.
+- **사진 위 좌표 오버레이** — 필기체라 글자별 좌표를 얻을 수 없습니다.
+- **Tesseract 등 별도 OCR** — 하라카트 복원까지 필요하므로 비전 호출 한 번이 더 낫습니다.
+- **상태관리 라이브러리** — `useState` 로 충분합니다.
+
+## 앞으로
+
+- 폰트를 번들에 넣기 (`src/styles.css` 의 `@import` 한 줄만 갈아 끼우면 됩니다)
+- 호출 횟수 제한을 공용 저장소로
+- 최근에 읽은 단어 저장

@@ -1,0 +1,62 @@
+# 데모 페이지를 GitHub Pages 에 올린다.
+#
+# 올라가는 것은 demo/dist/ 뿐이다 — 서버 없이 도는 정적 사이트.
+# 앱 본체(사진 분석)는 /api/read 서버리스 함수가 필요해서 Pages 로는 못 올린다.
+#
+# 처음 한 번은 워크플로가 알아서 Pages 를 켠다 (configure-pages 의 enablement).
+# 권한 때문에 실패하면 저장소 Settings → Pages → Source 를 "GitHub Actions" 로
+# 직접 바꾸고 다시 돌리면 된다.
+
+name: 데모 페이지 배포
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나씩. 진행 중인 것을 끊지는 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # 자모표 데이터와 발음 옮기기가 어긋난 채로 올라가지 않게
+      - run: npm test
+
+      - run: npm run demo
+
+      # enablement: Pages 가 꺼져 있으면 켜고 시작한다
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
