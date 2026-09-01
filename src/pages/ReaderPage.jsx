@@ -14,7 +14,8 @@ import { SAMPLES } from '../lib/samples.js'
 
 export default function ReaderPage() {
   const [result, setResult] = useState(SAMPLES[0])
-  const [sampleIndex, setSampleIndex] = useState(0) // 고른 예문. 분석 결과를 받으면 -1
+  const [kind, setKind] = useState('낱말') // 예문 갈래
+  const [sampleTag, setSampleTag] = useState(SAMPLES[0].tag) // 고른 예문. 분석 결과를 받으면 null
   const [wordIndex, setWordIndex] = useState(0)
   const [letterIndex, setLetterIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -86,6 +87,13 @@ export default function ReaderPage() {
     }
   }, [letterIndex, wordIndex, words])
 
+  const visibleSamples = useMemo(() => SAMPLES.filter((sample) => sample.kind === kind), [kind])
+  const kinds = useMemo(() => {
+    const counts = new Map()
+    SAMPLES.forEach((sample) => counts.set(sample.kind, (counts.get(sample.kind) || 0) + 1))
+    return [...counts.entries()]
+  }, [])
+
   const sentence = useMemo(() => words.map((w) => w.a).join(' '), [words])
 
   /** 지금 고른 단위로 읽어 준다 */
@@ -120,9 +128,11 @@ export default function ReaderPage() {
     })
   }, [atEnd, sound, unit, sentence, speakUnit])
 
-  const pickSample = useCallback((i) => {
-    setResult(SAMPLES[i])
-    setSampleIndex(i)
+  const pickSample = useCallback((tag) => {
+    const found = SAMPLES.find((sample) => sample.tag === tag)
+    if (!found) return
+    setResult(found)
+    setSampleTag(tag)
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
@@ -156,7 +166,7 @@ export default function ReaderPage() {
       return
     }
     setResult(data)
-    setSampleIndex(-1)
+    setSampleTag(null)
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
@@ -206,7 +216,7 @@ export default function ReaderPage() {
         : '붙어 있는 부호대로 읽었습니다.',
       w: out.w,
     })
-    setSampleIndex(-1)
+    setSampleTag(null)
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
@@ -223,7 +233,14 @@ export default function ReaderPage() {
 
       <section className="panel">
         <span className="editor__label">예문</span>
-        <SamplePicker samples={SAMPLES} index={sampleIndex} onSelect={pickSample} />
+        <SamplePicker
+          samples={visibleSamples}
+          activeTag={sampleTag}
+          onSelect={pickSample}
+          kind={kind}
+          kinds={kinds}
+          onKindChange={setKind}
+        />
       </section>
 
       {word && (

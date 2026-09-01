@@ -87,3 +87,28 @@ test('readLetter: 앞 글자에 따라 장모음인지 자음인지 갈린다', 
   assert.equal(readLetter('ي', 'لِ', false).k, '―')   // 카스라 뒤 → 장모음 이—
   assert.equal(readLetter('ي', 'شَ', true).k, '이')    // 그 밖에는 자음 y
 })
+
+test('태양문자 앞의 ل 은 소리 내지 않는다', () => {
+  // اَلسَّلَام 은 「알살람」이 아니라 「앗살람」이다.
+  // 뒤 자음에 샷다가 붙어 있는 것이 동화의 표시다.
+  const sun = readWord('اَلسَّلَامُ')
+  assert.equal(sun.l[1].a, 'ل')
+  assert.equal(sun.l[1].k, '묵음')
+
+  // 달문자 앞에서는 그대로 소리 난다
+  const moon = readWord('اَلْبَيْتُ')
+  assert.equal(moon.l[1].k, '르')
+})
+
+test('낱말 첫머리의 알리프는 얹힌 모음을 낸다', () => {
+  assert.equal(readWord('اِسْمِي').l[0].k, '이')
+  assert.equal(readWord('اَلْبَيْتُ').l[0].k, '아')
+  // 파트하 뒤에 홀로 선 알리프는 여전히 장모음이다
+  assert.equal(readWord('بَاب').l[1].k, '―')
+})
+
+test('함자도 얹힌 모음을 낸다', () => {
+  assert.equal(readWord('مَسَاءُ').l.at(-1).k, '우')
+  assert.equal(readWord('أُسْتَاذ').l[0].k, '우')
+  assert.equal(readWord('إِلَى').l[0].k, '이')
+})

@@ -24,10 +24,13 @@ const TANWIN_KASR = 'ٍ' // ٍ  -in
 
 // 28자에 없지만 자주 나오는 글자들
 const EXTRA = {
+  // 낱말 첫머리의 알리프. 파트하 뒤에 홀로 선 장모음 ا 는 아래 분기가 먼저 잡으므로
+  // 여기 값은 부호를 얹었거나 낱말 첫머리에 선 경우에만 쓰인다.
+  'ا': { c: 'ʾ', reads: ['아', '이', '우', '아'] }, // ا
   'أ': { c: 'ʾ', reads: ['아', '이', '우', '으'] }, // أ
   'إ': { c: 'ʾ', reads: ['아', '이', '우', '으'] }, // إ
   'آ': { c: 'ʾā', reads: ['아', '아', '아', '아'] }, // آ
-  'ء': { c: 'ʾ', reads: ['으', '으', '으', '으'] }, // ء
+  'ء': { c: 'ʾ', reads: ['아', '이', '우', '으'] }, // ء — 함자도 얹힌 모음을 낸다
 }
 
 const TABLE = {}
@@ -77,7 +80,7 @@ function inspect(unit) {
  * @param {string|null} prev 앞 조각 (장모음 판정에 쓴다)
  * @param {boolean} isLast 단어의 마지막 조각인가 (부호 없이 끝나면 수쿤으로 읽는다)
  */
-export function readLetter(unit, prev, isLast) {
+export function readLetter(unit, prev, isLast, next) {
   const u = inspect(unit)
   if (!u.base) return { a: unit, k: unit, r: unit }
 
@@ -85,6 +88,13 @@ export function readLetter(unit, prev, isLast) {
   const prevHas = (mark) => (prev ? inspect(prev).has(mark) : false)
   const plain = u.marks.length === 0
   const onlySukun = u.marks.length === 1 && u.has(SUKUN)
+
+  // 태양문자 앞의 ل 은 쓰기만 하고 소리 내지 않는다. 뒤 자음이 겹쳐(샷다) 그
+  // 몫을 대신한다 — اَلسَّلَام 은 「알살람」이 아니라 「앗살람」이다.
+  // 뒤 조각에 샷다가 붙어 있는 것이 그 표시다.
+  if (u.base === 'ل' && (plain || onlySukun) && next && inspect(next).has(SHADDA)) {
+    return { a: unit, k: '묵음', r: '(-)' }
+  }
 
   // 홀로 선 alif/waw/ya 는 자음이 아니라 앞 모음에 붙는다
   if (plain || onlySukun) {
@@ -147,7 +157,8 @@ function joinRoman(letters) {
 /** 단어 하나를 읽는다 */
 export function readWord(word) {
   const units = splitIntoLetters(word)
-  const l = units.map((unit, i) => readLetter(unit, i > 0 ? units[i - 1] : null, i === units.length - 1))
+  const l = units.map((unit, i) =>
+    readLetter(unit, i > 0 ? units[i - 1] : null, i === units.length - 1, units[i + 1]))
   return {
     a: word,
     k: l.map((letter) => letter.k).filter((k) => k !== '―' && k !== '묵음').join(''),
