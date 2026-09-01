@@ -1,4 +1,5 @@
 import { letterConnectsForward, letterForms } from '../lib/arabic.js'
+import { isSupported as canSpeak, speak } from '../lib/speech.js'
 
 const FORM_LABELS = [
   ['alone', '홀로'],
@@ -18,6 +19,7 @@ const MARK_LABELS = [
 /** 격자에서 펼쳐지는 글자 상세 — 네 가지 모양과 부호별 발음 */
 export default function LetterDetail({ letter }) {
   const forms = letterForms(letter.a)
+  const speakable = canSpeak()
 
   return (
     <div className="detail">
@@ -49,13 +51,30 @@ export default function LetterDetail({ letter }) {
 
       {letter.reads && (
         <div className="reads">
-          {MARK_LABELS.map(([mark, label], i) => (
-            <div className="read" key={label}>
-              <div className="read__mark" lang="ar">{letter.a + mark}</div>
-              <div className="read__ko">{letter.reads[i]}</div>
-              <div className="read__name">{label}</div>
-            </div>
-          ))}
+          {MARK_LABELS.map(([mark, label], i) => {
+            const syllable = letter.a + mark
+            const body = (
+              <>
+                <div className="read__mark" lang="ar">{syllable}</div>
+                <div className="read__ko">{letter.reads[i]}</div>
+                <div className="read__name">{label}</div>
+              </>
+            )
+            // 소리를 낼 수 있으면 눌러서 듣게 한다
+            return speakable ? (
+              <button
+                type="button"
+                className="read read--tap"
+                key={label}
+                onClick={() => speak(syllable, { rate: 0.7 })}
+                title={`${syllable} 듣기`}
+              >
+                {body}
+              </button>
+            ) : (
+              <div className="read" key={label}>{body}</div>
+            )
+          })}
         </div>
       )}
 
@@ -66,6 +85,16 @@ export default function LetterDetail({ letter }) {
           <span className="w" lang="ar">{letter.ex.a}</span>
           <span className="k">{letter.ex.k}</span>
           <span className="m">{letter.ex.m}</span>
+          {speakable && (
+            <button
+              type="button"
+              className="btn btn--quiet"
+              onClick={() => speak(letter.ex.a)}
+              title={`${letter.ex.a} 듣기`}
+            >
+              🔊 듣기
+            </button>
+          )}
         </div>
       )}
     </div>

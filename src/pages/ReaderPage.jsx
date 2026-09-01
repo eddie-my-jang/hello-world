@@ -9,7 +9,7 @@ import SamplePicker from '../components/SamplePicker.jsx'
 import { readImage, readText } from '../lib/api.js'
 import { readText as transliterate } from '../lib/transliterate.js'
 import { downscaleImage } from '../lib/image.js'
-import { canSpeakArabic, speak, watchVoices } from '../lib/speech.js'
+import { isSilentPiece, isSupported as canSpeak, primeFromUserGesture, speak, stop as stopSpeech } from '../lib/speech.js'
 import { SAMPLES } from '../lib/samples.js'
 
 export default function ReaderPage() {
@@ -23,7 +23,8 @@ export default function ReaderPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [preview, setPreview] = useState(null)
-  const [speechReady, setSpeechReady] = useState(canSpeakArabic())
+  const [sound, setSound] = useState(false) // 재생하면서 글자마다 소리 내기
+  const speechAvailable = canSpeak()
 
   const words = result.w
   const word = words[wordIndex] || null
@@ -34,7 +35,11 @@ export default function ReaderPage() {
   const isLastWord = wordIndex >= words.length - 1
   const atEnd = isLastLetter && (mode === 'word' || isLastWord)
 
-  useEffect(() => watchVoices(setSpeechReady), [])
+  // 지금 글자를 소리로. 장모음·묵음은 혼자서는 소리가 없어 건너뛴다.
+  useEffect(() => {
+    if (!sound || !letter || isSilentPiece(letter)) return
+    speak(letter.a, { rate: 0.75 })
+  }, [sound, letter])
 
   // ── 자동 재생 ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -73,8 +78,12 @@ export default function ReaderPage() {
   }, [letterIndex, wordIndex, words])
 
   const togglePlay = useCallback(() => {
+    primeFromUserGesture() // iOS: 사람이 누른 이 자리에서 한 번 깨워 둔다
     setPlaying((was) => {
-      if (was) return false
+      if (was) {
+        stopSpeech()
+        return false
+      }
       // 끝에서 다시 누르면 처음부터
       if (atEnd) {
         if (mode === 'sentence') setWordIndex(0)
@@ -218,8 +227,14 @@ export default function ReaderPage() {
               onSpeedChange={setSpeed}
               mode={mode}
               onModeChange={setMode}
-              canSpeak={speechReady}
+              canSpeak={speechAvailable}
               onSpeak={() => speak(word.a)}
+              sound={sound}
+              onSoundChange={(next) => {
+                setSound(next)
+                if (!next) stopSpeech()
+                else primeFromUserGesture()
+              }}
             />
 
             <WordChips words={words} wordIndex={wordIndex} onSelect={selectWord} />

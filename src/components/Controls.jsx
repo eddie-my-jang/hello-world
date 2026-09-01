@@ -12,6 +12,8 @@ export default function Controls({
   onModeChange,
   canSpeak,
   onSpeak,
+  sound,
+  onSoundChange,
 }) {
   return (
     <div className="controls">
@@ -46,6 +48,17 @@ export default function Controls({
           />
           <span className="field__value">{(speed / 1000).toFixed(2)}초</span>
         </label>
+
+        {canSpeak && (
+          <label className="switch" title="재생하면서 글자마다 소리를 냅니다">
+            <input
+              type="checkbox"
+              checked={sound}
+              onChange={(e) => onSoundChange(e.target.checked)}
+            />
+            글자마다 소리
+          </label>
+        )}
 
         <div className="segmented" role="group" aria-label="읽기 범위">
           <button

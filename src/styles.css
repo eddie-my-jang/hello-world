@@ -301,6 +301,17 @@ html, body {
 .field__value { font-family: var(--f-mono); min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
 .field input[type='range'] { width: 122px; accent-color: var(--rubric); }
 
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.switch input { accent-color: var(--rubric); width: 15px; height: 15px; }
+
 /* ── 단어 칩 ────────────────────────────────────────────────────────────────── */
 .chips {
   display: flex;
@@ -408,6 +419,12 @@ html, body {
 .form__label { font-size: 11px; color: var(--ink-3); letter-spacing: 0.04em; }
 .form__ar { font-family: var(--f-ar); font-size: 33px; line-height: 1.6; direction: rtl; }
 .form__ar.is-none { font-family: var(--f-ui); font-size: 13px; color: var(--ink-3); line-height: 3.1; }
+
+/* 눌러서 들을 수 있는 칸 */
+.read--tap { font: inherit; cursor: pointer; transition: border-color 0.15s linear; }
+.read--tap:hover { border-color: var(--rubric); }
+
+.btn--quiet { font-size: 12.5px; padding: 4px 9px; margin-inline-start: auto; }
 
 .read__mark { font-family: var(--f-ar); font-size: 24px; line-height: 1.5; color: var(--rubric); direction: rtl; }
 .read__ko { font-size: 17px; font-weight: 600; }
