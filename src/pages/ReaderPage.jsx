@@ -19,11 +19,11 @@ export default function ReaderPage() {
   const [letterIndex, setLetterIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(800) // 글자 하나당 ms
-  const [mode, setMode] = useState('sentence')
+  const [unit, setUnit] = useState('letter') // 발음 단위: letter | word | sentence
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [preview, setPreview] = useState(null)
-  const [sound, setSound] = useState(false) // 재생하면서 글자마다 소리 내기
+  const [sound, setSound] = useState(false) // 재생하면서 소리 낼지
   const speechAvailable = canSpeak()
 
   const words = result.w
@@ -33,13 +33,22 @@ export default function ReaderPage() {
 
   const isLastLetter = letterIndex >= letters.length - 1
   const isLastWord = wordIndex >= words.length - 1
-  const atEnd = isLastLetter && (mode === 'word' || isLastWord)
+  const atEnd = isLastLetter && isLastWord
 
-  // 지금 글자를 소리로. 장모음·묵음은 혼자서는 소리가 없어 건너뛴다.
+  // ── 소리 ───────────────────────────────────────────────────────────────────
+  // 고른 단위만 읽는다. 글자를 골랐으면 낱말이나 문장은 읽지 않는다.
+
+  // 글자: 짚을 때마다. 장모음·묵음은 혼자서는 소리가 없어 건너뛴다.
   useEffect(() => {
-    if (!sound || !letter || isSilentPiece(letter)) return
+    if (!sound || unit !== 'letter' || !letter || isSilentPiece(letter)) return
     speak(letter.a, { rate: 0.75 })
-  }, [sound, letter])
+  }, [sound, unit, letter])
+
+  // 낱말: 낱말이 바뀔 때 한 번
+  useEffect(() => {
+    if (!sound || unit !== 'word' || !word) return
+    speak(word.a)
+  }, [sound, unit, word])
 
   // ── 자동 재생 ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function ReaderPage() {
     const id = setTimeout(() => {
       if (!isLastLetter) {
         setLetterIndex((i) => i + 1)
-      } else if (mode === 'sentence' && !isLastWord) {
+      } else if (!isLastWord) {
         setWordIndex((i) => i + 1)
         setLetterIndex(0)
       } else {
@@ -57,7 +66,7 @@ export default function ReaderPage() {
     }, speed)
 
     return () => clearTimeout(id)
-  }, [playing, speed, mode, letters.length, isLastLetter, isLastWord, wordIndex, letterIndex])
+  }, [playing, speed, letters.length, isLastLetter, isLastWord, wordIndex, letterIndex])
 
   // ── 이동 ───────────────────────────────────────────────────────────────────
   const goNext = useCallback(() => {
@@ -77,6 +86,16 @@ export default function ReaderPage() {
     }
   }, [letterIndex, wordIndex, words])
 
+  const sentence = useMemo(() => words.map((w) => w.a).join(' '), [words])
+
+  /** 지금 고른 단위로 읽어 준다 */
+  const speakUnit = useCallback(() => {
+    if (unit === 'sentence') return speak(sentence)
+    if (unit === 'word') return word && speak(word.a)
+    if (letter && !isSilentPiece(letter)) return speak(letter.a, { rate: 0.75 })
+    return false
+  }, [unit, sentence, word, letter])
+
   const togglePlay = useCallback(() => {
     primeFromUserGesture() // iOS: 사람이 누른 이 자리에서 한 번 깨워 둔다
     setPlaying((was) => {
@@ -86,12 +105,20 @@ export default function ReaderPage() {
       }
       // 끝에서 다시 누르면 처음부터
       if (atEnd) {
-        if (mode === 'sentence') setWordIndex(0)
+        setWordIndex(0)
         setLetterIndex(0)
+      }
+      // 시작할 때 지금 단위를 한 번 읽어 준다. 그 뒤로는 위의 효과들이
+      // 글자·낱말이 바뀔 때마다 이어서 읽는다.
+      // 문장은 자리와 무관하므로 언제나 읽고, 글자·낱말은 끝에서 되감는
+      // 경우만 건너뛴다 — 되감으면 효과가 알아서 새 자리를 읽는다.
+      if (sound) {
+        if (unit === 'sentence') speak(sentence)
+        else if (!atEnd) speakUnit()
       }
       return true
     })
-  }, [atEnd, mode])
+  }, [atEnd, sound, unit, sentence, speakUnit])
 
   const pickSample = useCallback((i) => {
     setResult(SAMPLES[i])
@@ -186,8 +213,6 @@ export default function ReaderPage() {
     setError('')
   }
 
-  const sentence = useMemo(() => words.map((w) => w.a).join(' '), [words])
-
   return (
     <div className="page">
       <section className="panel">
@@ -225,10 +250,13 @@ export default function ReaderPage() {
               canNext={!isLastLetter || !isLastWord}
               speed={speed}
               onSpeedChange={setSpeed}
-              mode={mode}
-              onModeChange={setMode}
+              unit={unit}
+              onUnitChange={(next) => {
+                setUnit(next)
+                stopSpeech()
+              }}
               canSpeak={speechAvailable}
-              onSpeak={() => speak(word.a)}
+              onSpeak={speakUnit}
               sound={sound}
               onSoundChange={(next) => {
                 setSound(next)

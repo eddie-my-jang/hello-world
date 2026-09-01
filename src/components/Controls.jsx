@@ -1,4 +1,10 @@
-/** 재생/멈춤·이전/다음·속도·모드·듣기 */
+const UNITS = [
+  ['letter', '글자'],
+  ['word', '단어'],
+  ['sentence', '문장'],
+]
+
+/** 재생/멈춤·이전/다음·속도·발음 단위·듣기 */
 export default function Controls({
   playing,
   onTogglePlay,
@@ -8,8 +14,8 @@ export default function Controls({
   canNext,
   speed,
   onSpeedChange,
-  mode,
-  onModeChange,
+  unit,
+  onUnitChange,
   canSpeak,
   onSpeak,
   sound,
@@ -50,31 +56,31 @@ export default function Controls({
         </label>
 
         {canSpeak && (
-          <label className="switch" title="재생하면서 글자마다 소리를 냅니다">
+          <label className="switch" title="재생하면서 소리를 냅니다">
             <input
               type="checkbox"
               checked={sound}
               onChange={(e) => onSoundChange(e.target.checked)}
             />
-            글자마다 소리
+            소리
           </label>
         )}
 
-        <div className="segmented" role="group" aria-label="읽기 범위">
-          <button
-            type="button"
-            className={`segmented__btn${mode === 'word' ? ' is-active' : ''}`}
-            onClick={() => onModeChange('word')}
-          >
-            단어 하나
-          </button>
-          <button
-            type="button"
-            className={`segmented__btn${mode === 'sentence' ? ' is-active' : ''}`}
-            onClick={() => onModeChange('sentence')}
-          >
-            문장 전체
-          </button>
+        <div className="field">
+          <span className="field__label">발음 단위</span>
+          <div className="segmented" role="group" aria-label="발음 단위">
+            {UNITS.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`segmented__btn${unit === value ? ' is-active' : ''}`}
+                aria-pressed={unit === value}
+                onClick={() => onUnitChange(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
