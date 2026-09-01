@@ -86,7 +86,7 @@
   var reader = (function () {
     var state = {
       data: DECKS[0], deck: 0, wi: 0, li: 0,
-      playing: false, speed: 800, mode: 'all', zwjOff: false, codes: false, sound: false
+      playing: false, speed: 800, unit: 'letter', zwjOff: false, codes: false, sound: false
     };
     var timer = null;
 
@@ -161,7 +161,9 @@
         meta.appendChild(s);
       });
 
-      if (state.sound && !Speech.isSilentPiece(l)) Speech.speak(l.a, { rate: 0.75 });
+      if (state.sound && state.unit === 'letter' && !Speech.isSilentPiece(l)) {
+        Speech.speak(l.a, { rate: 0.75 });
+      }
 
       $('focusGlyph').textContent = l.a;
       $('focusKo').textContent = l.k || '발음 정보 없음';
@@ -211,11 +213,34 @@
       });
     }
 
+    function sentenceText() {
+      return state.data.w.map(function (w) { return w.a; }).join(' ');
+    }
+
+    /** 지금 고른 단위로 읽어 준다 */
+    function speakUnit() {
+      var w = word();
+      var l = letters()[state.li];
+      if (state.unit === 'sentence') return Speech.speak(sentenceText());
+      if (state.unit === 'word') return w && Speech.speak(w.a);
+      if (l && !Speech.isSilentPiece(l)) return Speech.speak(l.a, { rate: 0.75 });
+      return false;
+    }
+
     function goTo(wi, li) {
       var changed = wi !== state.wi;
       state.wi = wi;
       state.li = li;
-      if (changed) renderBoard(); else paint();
+      if (changed) {
+        renderBoard();
+        // 낱말 단위면 낱말이 바뀔 때 한 번 읽는다
+        if (state.sound && state.unit === 'word') {
+          var w = word();
+          if (w) Speech.speak(w.a);
+        }
+      } else {
+        paint();
+      }
     }
 
     function next() {
@@ -238,7 +263,7 @@
       if (!state.playing) return;
       timer = setTimeout(function () {
         if (!lastLetter()) { state.li++; paint(); }
-        else if (state.mode === 'all' && !lastWord()) goTo(state.wi + 1, 0);
+        else if (!lastWord()) goTo(state.wi + 1, 0);
         else { stop(); return; }
         tick();
       }, state.speed);
@@ -247,8 +272,14 @@
     function togglePlay() {
       Speech.primeFromUserGesture(); // iOS: 사람이 누른 이 자리에서 깨워 둔다
       if (state.playing) { stop(); Speech.stop(); return; }
-      var atEnd = lastLetter() && (state.mode === 'word' || lastWord());
-      if (atEnd) goTo(state.mode === 'all' ? 0 : state.wi, 0);
+      var atEnd = lastLetter() && lastWord();
+      if (atEnd) goTo(0, 0);
+      // 시작할 때 지금 단위를 한 번 읽어 준다. 문장은 자리와 무관하므로
+      // 언제나, 글자·낱말은 끝에서 되감는 경우만 건너뛴다 (goTo 가 읽는다).
+      if (state.sound) {
+        if (state.unit === 'sentence') Speech.speak(sentenceText());
+        else if (!atEnd) speakUnit();
+      }
       state.playing = true;
       $('play').textContent = '멈춤';
       tick();
@@ -322,15 +353,19 @@
         if (state.playing) tick();
       });
 
-      function setMode(mode) {
-        state.mode = mode;
-        $('modeWord').className = 'segmented__btn' + (mode === 'word' ? ' is-active' : '');
-        $('modeAll').className = 'segmented__btn' + (mode === 'all' ? ' is-active' : '');
-        $('modeWord').setAttribute('aria-pressed', String(mode === 'word'));
-        $('modeAll').setAttribute('aria-pressed', String(mode === 'all'));
+      var UNITS = [['letter', 'unitLetter'], ['word', 'unitWord'], ['sentence', 'unitSentence']];
+      function setUnit(unit) {
+        state.unit = unit;
+        Speech.stop();
+        UNITS.forEach(function (pair) {
+          var on = pair[0] === unit;
+          $(pair[1]).className = 'segmented__btn' + (on ? ' is-active' : '');
+          $(pair[1]).setAttribute('aria-pressed', String(on));
+        });
       }
-      $('modeWord').addEventListener('click', function () { setMode('word'); });
-      $('modeAll').addEventListener('click', function () { setMode('all'); });
+      UNITS.forEach(function (pair) {
+        $(pair[1]).addEventListener('click', function () { setUnit(pair[0]); });
+      });
 
       $('zwjOff').addEventListener('change', function () {
         state.zwjOff = $('zwjOff').checked;
@@ -380,18 +415,13 @@
       $('speak').hidden = !Speech.isSupported();
       $('soundRow').hidden = !Speech.isSupported();
 
-      $('speak').addEventListener('click', function () {
-        var w = word();
-        if (w) Speech.speak(w.a);
-      });
+      $('speak').addEventListener('click', speakUnit);
 
       $('sound').addEventListener('change', function () {
         state.sound = $('sound').checked;
         if (!state.sound) { Speech.stop(); return; }
         Speech.primeFromUserGesture();
-        // 켠 순간 지금 글자부터 들려준다 (앱과 같게)
-        var l = letters()[state.li];
-        if (l && !Speech.isSilentPiece(l)) Speech.speak(l.a, { rate: 0.75 });
+        speakUnit(); // 켠 순간 지금 단위를 한 번 들려준다
       });
 
       renderDecks();
