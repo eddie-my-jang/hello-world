@@ -73,12 +73,26 @@ function inlineSpeech(source) {
   return `(function () {\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
 }
 
-const [template, appJs, styles, engine, speech] = await Promise.all([
+// 사전도 그대로 넣는다. 데모에서는 예문이 DECKS, 모음 부호가 VOWEL_MARKS 라는
+// 이름이라 앞머리에서 맞춰 준다.
+function inlineDictionary(source) {
+  const api = ['size', 'lookup', 'isVocalized', 'readTextSmart']
+  for (const name of api) {
+    if (!source.includes(`export function ${name}`)) {
+      throw new Error(`dictionary.js 에 ${name} 이 없습니다`)
+    }
+  }
+  return `(function () {\n  var SAMPLES = DECKS;\n  var MARKS = VOWEL_MARKS;\n`
+    + `${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
+}
+
+const [template, appJs, styles, engine, speech, dictionary] = await Promise.all([
   read('demo/template.html'),
   read('demo/app.js'),
   read('src/styles.css'),
   read('src/lib/transliterate.js'),
   read('src/lib/speech.js'),
+  read('src/lib/dictionary.js'),
 ])
 
 const page = template
@@ -86,7 +100,8 @@ const page = template
   .replace('/*__DATA__*/', () => inlineJson(data))
   .replace('/*__APP_JS__*/', () => appJs
     .replace('/*__TRANSLITERATE__*/', () => inlineModule(engine))
-    .replace('/*__SPEECH__*/ {}', () => inlineSpeech(speech)))
+    .replace('/*__SPEECH__*/ {}', () => inlineSpeech(speech))
+    .replace('/*__DICTIONARY__*/ {}', () => inlineDictionary(dictionary)))
 
 const leftover = page.match(/\/\*__[A-Z_]+__\*\//g)
 if (leftover) throw new Error(`치환되지 않은 자리가 있습니다: ${leftover.join(', ')}`)
