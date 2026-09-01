@@ -164,10 +164,17 @@ kbd {
       <form class="editor" id="compose">
         <label class="editor__label" for="composeText">직접 입력</label>
         <textarea id="composeText" class="editor__input" dir="rtl" lang="ar" rows="2" placeholder="아랍어를 붙여넣어 보세요"></textarea>
+        <div class="marks">
+          <span class="marks__label">부호 붙이기</span>
+          <div class="marks__row" id="markRow"></div>
+        </div>
+
         <div class="editor__actions">
           <button class="btn" type="submit">이 글자로 읽기판 만들기</button>
         </div>
-        <p class="note">붙어 있는 <b>부호대로 읽어 줍니다</b> — 앱과 같은 코드가 브라우저 안에서 돕니다. 다만 부호가 없는 글자는 모음을 만들어 낼 수 없어 자음만 남깁니다(ㅋ, ㅌ …). 빠진 하라카트를 채우는 일과 사진 분석은 서버(<code style="font-family: var(--f-mono); font-size: 12px;">/api/read</code>)가 필요해서 이 데모에는 없습니다.</p>
+        <div class="picks" id="picks" hidden></div>
+
+        <p class="note">붙어 있는 <b>부호대로 읽어 줍니다</b>. 부호가 없으면 <b>앱이 아는 낱말에서 찾아</b> 채웁니다 — 이 페이지에는 부호가 붙은 낱말이 이미 수백 개 들어 있습니다. 못 찾은 자리는 지어내지 않고 자음만 남깁니다(ㅋ, ㅌ …). 위의 부호 단추로 직접 붙여도 됩니다. 문맥까지 읽어 하라카트를 채우는 일과 사진 분석은 서버(<code style="font-family: var(--f-mono); font-size: 12px;">/api/read</code>)가 필요해서 이 데모에는 없습니다.</p>
       </form>
     </section>
 

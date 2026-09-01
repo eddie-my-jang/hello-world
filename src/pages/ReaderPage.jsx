@@ -7,13 +7,17 @@ import Uploader from '../components/Uploader.jsx'
 import TextEditor from '../components/TextEditor.jsx'
 import SamplePicker from '../components/SamplePicker.jsx'
 import { readImage, readText } from '../lib/api.js'
-import { readText as transliterate } from '../lib/transliterate.js'
+import { readTextSmart } from '../lib/dictionary.js'
+import DictPicks from '../components/DictPicks.jsx'
 import { downscaleImage } from '../lib/image.js'
 import { isSilentPiece, isSupported as canSpeak, primeFromUserGesture, speak, stop as stopSpeech } from '../lib/speech.js'
 import { SAMPLES } from '../lib/samples.js'
 
 export default function ReaderPage() {
   const [result, setResult] = useState(SAMPLES[0])
+  const [picks, setPicks] = useState([])   // 읽기가 갈리는 낱말들
+  const [choices, setChoices] = useState({}) // 그 가운데 고른 것
+  const [typed, setTyped] = useState('')     // 직접 입력한 원문 (다시 읽을 때 쓴다)
   const [kind, setKind] = useState('낱말') // 예문 갈래
   const [sampleTag, setSampleTag] = useState(SAMPLES[0].tag) // 고른 예문. 분석 결과를 받으면 null
   const [wordIndex, setWordIndex] = useState(0)
@@ -133,6 +137,7 @@ export default function ReaderPage() {
     if (!found) return
     setResult(found)
     setSampleTag(tag)
+    setPicks([])
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
@@ -167,6 +172,7 @@ export default function ReaderPage() {
     }
     setResult(data)
     setSampleTag(null)
+    setPicks([])
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
@@ -202,25 +208,40 @@ export default function ReaderPage() {
       return readText(text)
     })
 
-  /** 서버를 거치지 않고, 붙어 있는 부호대로만 읽는다 */
-  const handleLocalRead = (text) => {
-    const out = transliterate(text)
+  /**
+   * 서버를 거치지 않고 읽는다.
+   * 부호가 붙어 있으면 그대로, 없으면 앱이 아는 낱말에서 찾아 채운다.
+   */
+  const handleLocalRead = (text, nextChoices = {}) => {
+    const out = readTextSmart(text, { choices: nextChoices })
     if (!out.w.length) {
       setError('아랍어를 찾지 못했습니다.')
       return
     }
+
+    const unknown = out.w.reduce((sum, word) => sum + (word.unknown || 0), 0)
+    const parts = []
+    if (out.found) parts.push(`${out.found}개는 앱이 아는 낱말에서 찾았습니다`)
+    if (unknown) parts.push(`모음을 알 수 없는 자리가 ${unknown}곳 남았습니다`)
+
     setPreview(null)
     setResult({
-      t: out.unknown
-        ? `붙어 있는 부호대로만 읽었습니다. 모음을 알 수 없는 자리가 ${out.unknown}곳 있습니다.`
-        : '붙어 있는 부호대로 읽었습니다.',
+      t: parts.length ? parts.join('. ') + '.' : '붙어 있는 부호대로 읽었습니다.',
       w: out.w,
     })
+    setTyped(text)
+    setPicks(out.picks)
+    setChoices(nextChoices)
     setSampleTag(null)
     setWordIndex(0)
     setLetterIndex(0)
     setPlaying(false)
     setError('')
+  }
+
+  /** 갈리는 낱말에서 다른 읽기를 고르면 그 자리만 바꿔 다시 읽는다 */
+  const chooseReading = (index, word) => {
+    handleLocalRead(typed, { ...choices, [index]: word })
   }
 
   return (
@@ -292,6 +313,7 @@ export default function ReaderPage() {
               onReadLocal={handleLocalRead}
               busy={busy}
             />
+            <DictPicks picks={picks} choices={choices} onChoose={chooseReading} />
           </section>
         </>
       )}

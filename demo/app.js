@@ -35,6 +35,11 @@
     });
   }
 
+  function stripHarakat(text) {
+    return (text || '').replace(new RegExp(HARAKAT_RE.source, 'g'), '');
+  }
+  var isArabicLetter = isLetter; // 사전 쪽 이름에 맞춘다
+
   function splitIntoLetters(word) {
     var out = [];
     Array.prototype.forEach.call(word || '', function (ch) {
@@ -80,12 +85,19 @@
      ═══════════════════════════════════════════════════════════════════════ */
   var Speech = /*__SPEECH__*/ {};
 
+  /* ═══ 사전 ════════════════════════════════════════════════════════════════
+     build.mjs 가 src/lib/dictionary.js 를 여기에 넣는다. 데모에서는 예문이
+     DECKS·VOWEL_MARKS 라는 이름이라 앞에서 맞춰 준다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var Dict = /*__DICTIONARY__*/ {};
+
   function $(id) { return document.getElementById(id); }
 
   /* ═══ 읽기판 ══════════════════════════════════════════════════════════════ */
   var reader = (function () {
     var state = {
       data: DECKS[0], tag: DECKS[0] && DECKS[0].tag, kind: '낱말', wi: 0, li: 0,
+      typed: '', choices: {},
       playing: false, speed: 800, unit: 'letter', zwjOff: false, codes: false, sound: false
     };
     var timer = null;
@@ -315,6 +327,79 @@
       tick();
     }
 
+    /* 직접 입력한 글을 읽는다. 부호가 없으면 앱이 아는 낱말에서 찾아 채운다. */
+    function readTyped(text, choices) {
+      var out = Dict.readTextSmart(text, { choices: choices || {} });
+      if (!out.w.length) return;
+      var unknown = out.w.reduce(function (n, w) { return n + (w.unknown || 0); }, 0);
+      var parts = [];
+      if (out.found) parts.push(out.found + '개는 앱이 아는 낱말에서 찾았습니다');
+      if (unknown) parts.push('모음을 알 수 없는 자리가 ' + unknown + '곳 남았습니다');
+
+      stop();
+      state.tag = null;
+      state.typed = text;
+      state.choices = choices || {};
+      state.data = {
+        t: parts.length ? parts.join('. ') + '.' : '붙어 있는 부호대로 읽었습니다.',
+        w: out.w
+      };
+      state.wi = 0;
+      state.li = 0;
+      renderDecks();
+      renderBoard();
+      renderPicks(out.picks);
+      $('board').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    /* 읽기가 갈리는 낱말은 지어내지 않고 고르게 한다 */
+    function renderPicks(picks) {
+      var host = $('picks');
+      host.innerHTML = '';
+      host.hidden = !picks.length;
+      if (!picks.length) return;
+
+      var lead = document.createElement('p');
+      lead.className = 'picks__lead';
+      lead.textContent = '부호가 없어 읽기가 갈리는 낱말이 있습니다. 눌러서 고르세요.';
+      host.appendChild(lead);
+
+      picks.forEach(function (pick) {
+        var row = document.createElement('div');
+        row.className = 'pick';
+        var bare = document.createElement('span');
+        bare.className = 'pick__bare';
+        bare.setAttribute('lang', 'ar');
+        bare.setAttribute('dir', 'rtl');
+        bare.textContent = pick.bare;
+        row.appendChild(bare);
+
+        var options = document.createElement('div');
+        options.className = 'pick__options';
+        pick.candidates.forEach(function (candidate) {
+          var active = (state.choices[pick.index] || pick.chosen) === candidate.a;
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'pick__option' + (active ? ' is-active' : '');
+          b.setAttribute('aria-pressed', String(active));
+          b.innerHTML = '<span class="pick__ar" lang="ar" dir="rtl"></span>'
+            + '<span class="pick__ko"></span><span class="pick__m"></span>';
+          b.children[0].textContent = candidate.a;
+          b.children[1].textContent = candidate.k;
+          b.children[2].textContent = candidate.m || '';
+          b.addEventListener('click', function () {
+            var next = {};
+            Object.keys(state.choices).forEach(function (k) { next[k] = state.choices[k]; });
+            next[pick.index] = candidate.a;
+            readTyped(state.typed, next);
+          });
+          options.appendChild(b);
+        });
+        row.appendChild(options);
+        host.appendChild(row);
+      });
+    }
+
     function pickDeck(tag) {
       var found = DECKS.filter(function (deck) { return deck.tag === tag; })[0];
       if (!found) return;
@@ -325,6 +410,7 @@
       state.li = 0;
       renderDecks();
       renderBoard();
+      renderPicks([]);
     }
 
     /* 이 브라우저가 span 경계를 넘어 이어 그리는지 직접 재 본다.
@@ -412,20 +498,47 @@
         renderBoard();
       });
 
+      // 부호 붙이기 단추 — 커서 자리에 끼워 넣는다
+      var MARK_BUTTONS = [
+        ['\u064E', '파트하'], ['\u0650', '카스라'], ['\u064F', '담마'], ['\u0652', '수쿤'],
+        ['\u0651', '샷다'], ['\u064B', '탄윈 파트흐'], ['\u064D', '탄윈 카스르'], ['\u064C', '탄윈 담므'],
+      ];
+      MARK_BUTTONS.forEach(function (pair) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mark';
+        b.title = pair[1];
+        b.innerHTML = '<span class="mark__glyph" lang="ar"></span><span class="mark__name"></span>';
+        b.children[0].textContent = '\u0640' + pair[0];
+        b.children[1].textContent = pair[1];
+        b.addEventListener('click', function () { insertMark(pair[0]); });
+        $('markRow').appendChild(b);
+      });
+      var clear = document.createElement('button');
+      clear.type = 'button';
+      clear.className = 'mark mark--clear';
+      clear.title = '붙은 부호를 모두 지웁니다';
+      clear.innerHTML = '<span class="mark__glyph">✕</span><span class="mark__name">지우기</span>';
+      clear.addEventListener('click', function () {
+        $('composeText').value = stripHarakat($('composeText').value);
+        $('composeText').focus();
+      });
+      $('markRow').appendChild(clear);
+
+      function insertMark(mark) {
+        var box = $('composeText');
+        var at = box.selectionStart == null ? box.value.length : box.selectionStart;
+        var to = box.selectionEnd == null ? at : box.selectionEnd;
+        box.value = box.value.slice(0, at) + mark + box.value.slice(to);
+        box.focus();
+        box.setSelectionRange(at + mark.length, at + mark.length);
+      }
+
       $('compose').addEventListener('submit', function (e) {
         e.preventDefault();
         var text = $('composeText').value.trim();
         if (!text) return;
-        var out = readText(text);
-        if (!out.w.length) return;
-        stop();
-        state.tag = null;
-        state.data = {
-          t: out.unknown
-            ? '붙어 있는 부호대로만 읽었습니다. 모음을 알 수 없는 자리가 ' + out.unknown + '곳 있습니다.'
-            : '붙어 있는 부호대로 읽었습니다.',
-          w: out.w
-        };
+        readTyped(text, {});
         state.wi = 0;
         state.li = 0;
         renderDecks();

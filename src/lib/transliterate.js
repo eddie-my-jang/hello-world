@@ -105,8 +105,18 @@ export function readLetter(unit, prev, isLast, next) {
     if (u.base === 'و' && prevHas(DAMMA)) return { a: unit, k: '―', r: 'ū' } // و
     if (u.base === 'ي' && prevHas(KASRA)) return { a: unit, k: '―', r: 'ī' } // ي
   }
-  if (u.base === 'ة') return { a: unit, k: '묵음', r: '(a)' } // ة
+  // ة 는 멈춰 읽으면 소리가 없지만, 격어미가 붙으면 ت 로 살아난다
+  // (اَلْقَهْوَة 카흐와 / اَلْقَهْوَةُ 카흐와투).
+  if (u.base === 'ة') { // ة
+    const marked = [FATHA, KASRA, DAMMA, TANWIN_FATH, TANWIN_KASR, TANWIN_DAMM].some((m) => u.has(m))
+    if (!marked) return { a: unit, k: '묵음', r: '(a)' }
+    // 읽기만 ت 에서 빌려 오고 글자는 그대로 둔다 — 글자판에 ة 가 그려져야 한다
+    const asTa = readLetter(unit.replace('ة', 'ت'), prev, isLast, next)
+    return { ...asTa, a: unit }
+  }
   if (u.base === 'ى') return { a: unit, k: '―', r: 'ā' } // ى
+  // آ 는 부호가 없어도 그 자체로 「아—」다
+  if (u.base === 'آ') return { a: unit, k: '아', r: 'ʾā' } // آ
 
   if (!entry) return { a: unit, k: '?', r: '?', unknown: true }
 
