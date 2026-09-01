@@ -61,17 +61,32 @@ function inlineJson(value) {
 
 const data = { SAMPLES, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS }
 
-const [template, appJs, styles, engine] = await Promise.all([
+// 소리 모듈도 그대로 넣는다. 읽기판에도 stop() 이 있어서 이름이 겹치므로
+// 객체로 감싸 Speech.speak(...) 처럼 쓰게 한다.
+function inlineSpeech(source) {
+  const api = ['isSupported', 'pickVoice', 'speak', 'stop', 'primeFromUserGesture', 'isSilentPiece']
+  for (const name of api) {
+    if (!source.includes(`export function ${name}`)) {
+      throw new Error(`speech.js 에 ${name} 이 없습니다`)
+    }
+  }
+  return `(function () {\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
+}
+
+const [template, appJs, styles, engine, speech] = await Promise.all([
   read('demo/template.html'),
   read('demo/app.js'),
   read('src/styles.css'),
   read('src/lib/transliterate.js'),
+  read('src/lib/speech.js'),
 ])
 
 const page = template
   .replace('/*__BASE_CSS__*/', () => baseCss(styles))
   .replace('/*__DATA__*/', () => inlineJson(data))
-  .replace('/*__APP_JS__*/', () => appJs.replace('/*__TRANSLITERATE__*/', () => inlineModule(engine)))
+  .replace('/*__APP_JS__*/', () => appJs
+    .replace('/*__TRANSLITERATE__*/', () => inlineModule(engine))
+    .replace('/*__SPEECH__*/ {}', () => inlineSpeech(speech)))
 
 const leftover = page.match(/\/\*__[A-Z_]+__\*\//g)
 if (leftover) throw new Error(`치환되지 않은 자리가 있습니다: ${leftover.join(', ')}`)

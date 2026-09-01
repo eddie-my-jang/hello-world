@@ -142,7 +142,7 @@ src/
   lib/transliterate.js   붙어 있는 부호대로 한글·로마자로 옮기기 (서버 없이)
   lib/api.js             /api/read 호출, JSON 파싱(코드펜스 제거 방어)
   lib/image.js           업로드 전 canvas 축소 (최대 1000px, JPEG 0.8)
-  lib/speech.js          Web Speech API (ar-SA)
+  lib/speech.js          Web Speech API (ar-SA) — 낱말·글자 듣기
   lib/samples.js         읽기판 초기 예시 단어
   lib/letters.js         자모표 데이터 (자음 28자, 부호, 장모음, 그밖의 글자)
   pages/
@@ -151,7 +151,7 @@ src/
   components/
     ReadingBoard.jsx     읽기판 — RTL 렌더링 + 글자 하이라이트
     LetterCard.jsx       현재 글자 크게 + 한글 + 로마자
-    Controls.jsx         재생/멈춤·이전/다음·속도·모드·듣기
+    Controls.jsx         재생/멈춤·이전/다음·속도·모드·듣기·글자마다 소리
     WordChips.jsx        단어 목록 (눌러서 이동)
     Uploader.jsx         사진 업로드 (모바일에서 카메라 열림)
     TextEditor.jsx       원문 수정 · 직접 입력
@@ -165,6 +165,7 @@ test/arabic.test.js      ZWJ 결합·글자 모양 테스트
 test/letters.test.js     자모표 데이터 무결성 테스트
 test/samples.test.js     예시 단어 무결성 테스트
 test/transliterate.test.js  발음 옮기기 테스트
+test/speech.test.js      음성 고르기 테스트
 ```
 
 ## 팔레트
@@ -203,6 +204,31 @@ test/transliterate.test.js  발음 옮기기 테스트
 
 응답은 `output_config.format` 의 JSON 스키마로 강제하고,
 그래도 펜스나 군더더기가 섞여 올 경우를 대비해 `src/lib/api.js` 가 방어적으로 파싱합니다.
+
+## 소리로 듣기
+
+Web Speech API 를 씁니다. 서버도 키도 필요 없고 오프라인에서도 동작합니다.
+
+| 어디서 | 무엇을 |
+| --- | --- |
+| 읽기판 · 🔊 듣기 | 지금 낱말 전체 |
+| 읽기판 · 글자마다 소리 | 재생하면서 한 글자씩 (장모음·묵음은 건너뜁니다) |
+| 자모표 · 부호 칸 | 눌러서 `بَ` `بِ` `بُ` `بْ` 각각 |
+| 자모표 · 예시 낱말 | 눌러서 그 낱말 |
+
+**음성 목록으로 버튼을 숨기지 않습니다.** 예전에는 `getVoices()` 에 아랍어 음성이
+있을 때만 버튼을 보여 줬는데, 그러면 아이폰에서 버튼이 영영 나타나지 않습니다 —
+iOS 사파리는 한 번이라도 발화하기 전까지 목록이 비어 있는 일이 흔하고
+`voiceschanged` 도 늦게 옵니다. 그래서 판단을 뒤로 미룹니다. 버튼은
+`speechSynthesis` 가 있으면 보여 주고, 실제로 말할 때 아랍어 음성을 고릅니다.
+못 고르면 `lang` 만 `ar-SA` 로 넘겨 기기가 알아서 고르게 둡니다.
+
+iOS 는 사람이 누른 동작에서 한 번 발화해 두어야 그 뒤 타이머로 부른 것도 소리가
+납니다. 그래서 재생 버튼과 소리 스위치를 누를 때 볼륨 0 짜리로 한 번 깨워 둡니다
+(`primeFromUserGesture`).
+
+장모음(`ا` `و` `ي`)과 묵음(`ة`)은 혼자서는 소리가 없으므로 글자마다 소리에서
+건너뜁니다 — `كِتَاب` 는 「كِ تَ ب」 로 읽습니다.
 
 ## 조작
 

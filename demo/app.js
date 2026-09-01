@@ -74,13 +74,19 @@
      ═══════════════════════════════════════════════════════════════════════ */
 /*__TRANSLITERATE__*/
 
+  /* ═══ 소리 ════════════════════════════════════════════════════════════════
+     build.mjs 가 src/lib/speech.js 를 여기에 넣는다. 이름이 겹치지 않게
+     (읽기판에도 stop 이 있다) 객체로 감싼다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var Speech = /*__SPEECH__*/ {};
+
   function $(id) { return document.getElementById(id); }
 
   /* ═══ 읽기판 ══════════════════════════════════════════════════════════════ */
   var reader = (function () {
     var state = {
       data: DECKS[0], deck: 0, wi: 0, li: 0,
-      playing: false, speed: 800, mode: 'all', zwjOff: false, codes: false
+      playing: false, speed: 800, mode: 'all', zwjOff: false, codes: false, sound: false
     };
     var timer = null;
 
@@ -154,6 +160,8 @@
         s.textContent = pair[1];
         meta.appendChild(s);
       });
+
+      if (state.sound && !Speech.isSilentPiece(l)) Speech.speak(l.a, { rate: 0.75 });
 
       $('focusGlyph').textContent = l.a;
       $('focusKo').textContent = l.k || '발음 정보 없음';
@@ -237,7 +245,8 @@
     }
 
     function togglePlay() {
-      if (state.playing) { stop(); return; }
+      Speech.primeFromUserGesture(); // iOS: 사람이 누른 이 자리에서 깨워 둔다
+      if (state.playing) { stop(); Speech.stop(); return; }
       var atEnd = lastLetter() && (state.mode === 'word' || lastWord());
       if (atEnd) goTo(state.mode === 'all' ? 0 : state.wi, 0);
       state.playing = true;
@@ -300,15 +309,6 @@
           wPlain.toFixed(0) + 'px</code> 동일). ZWJ 는 그렇지 않은 엔진을 위한 보험입니다.'
         : '<b>' + engineName() + '</b> — ZWJ 가 실제로 일하고 있습니다. 빼면 글자가 고립형으로 끊깁니다 (폭 <code>' +
           wPlain.toFixed(0) + 'px</code> → <code>' + wZwj.toFixed(0) + 'px</code>).';
-    }
-
-    function arabicVoice() {
-      if (!window.speechSynthesis) return null;
-      var voices = window.speechSynthesis.getVoices() || [];
-      for (var i = 0; i < voices.length; i++) {
-        if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('ar') === 0) return voices[i];
-      }
-      return null;
     }
 
     function init() {
@@ -375,22 +375,23 @@
         else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
       });
 
-      function refreshVoice() { $('speak').hidden = !arabicVoice(); }
-      if (window.speechSynthesis) {
-        refreshVoice();
-        window.speechSynthesis.addEventListener('voiceschanged', refreshVoice);
-        setTimeout(refreshVoice, 700);
-      }
+      // 음성 목록이 비어 있어도 버튼은 보여 준다 — iOS 는 첫 발화 전까지
+      // 목록이 비는 일이 흔해서, 목록으로 판단하면 버튼이 영영 안 나온다.
+      $('speak').hidden = !Speech.isSupported();
+      $('soundRow').hidden = !Speech.isSupported();
+
       $('speak').addEventListener('click', function () {
-        var v = arabicVoice();
         var w = word();
-        if (!v || !w) return;
-        window.speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance(w.a);
-        u.voice = v;
-        u.lang = v.lang;
-        u.rate = 0.85;
-        window.speechSynthesis.speak(u);
+        if (w) Speech.speak(w.a);
+      });
+
+      $('sound').addEventListener('change', function () {
+        state.sound = $('sound').checked;
+        if (!state.sound) { Speech.stop(); return; }
+        Speech.primeFromUserGesture();
+        // 켠 순간 지금 글자부터 들려준다 (앱과 같게)
+        var l = letters()[state.li];
+        if (l && !Speech.isSilentPiece(l)) Speech.speak(l.a, { rate: 0.75 });
       });
 
       renderDecks();
@@ -484,13 +485,21 @@
       }
 
       if (letter.reads) {
+        var speakable = Speech.isSupported();
         var readRow = document.createElement('div');
         readRow.className = 'reads';
         MARK_LABELS.forEach(function (pair, i) {
-          var cell = document.createElement('div');
-          cell.className = 'read';
+          var syllable = letter.a + pair[0];
+          // 소리를 낼 수 있으면 눌러서 듣게 한다
+          var cell = document.createElement(speakable ? 'button' : 'div');
+          cell.className = 'read' + (speakable ? ' read--tap' : '');
+          if (speakable) {
+            cell.type = 'button';
+            cell.title = syllable + ' 듣기';
+            cell.addEventListener('click', function () { Speech.speak(syllable, { rate: 0.7 }); });
+          }
           cell.innerHTML = '<div class="read__mark" lang="ar"></div><div class="read__ko"></div><div class="read__name"></div>';
-          cell.querySelector('.read__mark').textContent = letter.a + pair[0];
+          cell.querySelector('.read__mark').textContent = syllable;
           cell.querySelector('.read__ko').textContent = letter.reads[i];
           cell.querySelector('.read__name').textContent = pair[1];
           readRow.appendChild(cell);
@@ -512,6 +521,15 @@
         ex.querySelector('.w').textContent = letter.ex.a;
         ex.querySelector('.k').textContent = letter.ex.k;
         ex.querySelector('.m').textContent = letter.ex.m;
+        if (Speech.isSupported()) {
+          var listen = document.createElement('button');
+          listen.type = 'button';
+          listen.className = 'btn btn--quiet';
+          listen.textContent = '🔊 듣기';
+          listen.title = letter.ex.a + ' 듣기';
+          listen.addEventListener('click', function () { Speech.speak(letter.ex.a); });
+          ex.appendChild(listen);
+        }
         box.appendChild(ex);
       }
 

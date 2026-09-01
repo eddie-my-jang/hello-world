@@ -51,8 +51,6 @@
 .probe code { font-family: var(--f-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 .switches { display: flex; flex-wrap: wrap; gap: 16px; }
-.switch { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; }
-.switch input { accent-color: var(--rubric); width: 15px; height: 15px; }
 
 .codes { display: flex; gap: 6px; overflow-x: auto; direction: rtl; padding-bottom: 4px; }
 .code {
@@ -128,6 +126,9 @@ kbd {
             <span class="field__label">속도</span>
             <input type="range" id="speed" min="250" max="2000" step="50" value="1450">
             <span class="field__value" id="speedVal">0.80초</span>
+          </label>
+          <label class="switch" id="soundRow" hidden title="재생하면서 글자마다 소리를 냅니다">
+            <input type="checkbox" id="sound"> 글자마다 소리
           </label>
           <div class="segmented" role="group" aria-label="읽기 범위">
             <button type="button" class="segmented__btn" id="modeWord" aria-pressed="false">단어 하나</button>
