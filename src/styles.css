@@ -201,6 +201,7 @@ html, body {
   cursor: pointer;
 }
 .segmented__btn.is-active { background: var(--card); color: var(--ink); font-weight: 600; }
+.segmented__count { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
 
 /* ── 예문 고르기 ────────────────────────────────────────────────────────────── */
 .decks {

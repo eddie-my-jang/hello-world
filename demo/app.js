@@ -85,7 +85,7 @@
   /* ═══ 읽기판 ══════════════════════════════════════════════════════════════ */
   var reader = (function () {
     var state = {
-      data: DECKS[0], deck: 0, wi: 0, li: 0,
+      data: DECKS[0], tag: DECKS[0] && DECKS[0].tag, kind: '낱말', wi: 0, li: 0,
       playing: false, speed: 800, unit: 'letter', zwjOff: false, codes: false, sound: false
     };
     var timer = null;
@@ -95,18 +95,48 @@
     function lastLetter() { return state.li >= letters().length - 1; }
     function lastWord() { return state.wi >= state.data.w.length - 1; }
 
+    /* 예문이 예순 개가 넘어 낱말과 문장을 갈라서 보여 준다 */
+    function kindCounts() {
+      var counts = [];
+      DECKS.forEach(function (deck) {
+        var hit = counts.filter(function (c) { return c[0] === deck.kind; })[0];
+        if (hit) hit[1]++; else counts.push([deck.kind, 1]);
+      });
+      return counts;
+    }
+
+    function renderKinds() {
+      var host = $('kinds');
+      host.innerHTML = '';
+      kindCounts().forEach(function (pair) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'segmented__btn' + (pair[0] === state.kind ? ' is-active' : '');
+        b.setAttribute('aria-pressed', String(pair[0] === state.kind));
+        b.innerHTML = '<span></span> <span class="segmented__count"></span>';
+        b.children[0].textContent = pair[0];
+        b.children[1].textContent = pair[1];
+        b.addEventListener('click', function () {
+          state.kind = pair[0];
+          renderKinds();
+          renderDecks();
+        });
+        host.appendChild(b);
+      });
+    }
+
     function renderDecks() {
       var host = $('decks');
       host.innerHTML = '';
-      DECKS.forEach(function (deck, i) {
+      DECKS.filter(function (deck) { return deck.kind === state.kind; }).forEach(function (deck) {
         var b = document.createElement('button');
         b.className = 'deck';
         b.type = 'button';
-        b.setAttribute('aria-pressed', String(i === state.deck));
+        b.setAttribute('aria-pressed', String(deck.tag === state.tag));
         b.innerHTML = '<span class="deck__ar" lang="ar" dir="rtl"></span><span class="deck__ko"></span>';
         b.querySelector('.deck__ar').textContent = deck.w.map(function (w) { return w.a; }).join(' ');
         b.querySelector('.deck__ko').textContent = deck.tag;
-        b.addEventListener('click', function () { pickDeck(i); });
+        b.addEventListener('click', function () { pickDeck(deck.tag); });
         host.appendChild(b);
       });
     }
@@ -285,10 +315,12 @@
       tick();
     }
 
-    function pickDeck(i) {
+    function pickDeck(tag) {
+      var found = DECKS.filter(function (deck) { return deck.tag === tag; })[0];
+      if (!found) return;
       stop();
-      state.deck = i;
-      state.data = DECKS[i];
+      state.tag = tag;
+      state.data = found;
       state.wi = 0;
       state.li = 0;
       renderDecks();
@@ -387,7 +419,7 @@
         var out = readText(text);
         if (!out.w.length) return;
         stop();
-        state.deck = -1;
+        state.tag = null;
         state.data = {
           t: out.unknown
             ? '붙어 있는 부호대로만 읽었습니다. 모음을 알 수 없는 자리가 ' + out.unknown + '곳 있습니다.'
@@ -425,6 +457,7 @@
         speakUnit(); // 켠 순간 지금 단위를 한 번 들려준다
       });
 
+      renderKinds();
       renderDecks();
       renderBoard();
 
