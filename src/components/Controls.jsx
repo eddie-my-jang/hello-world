@@ -33,11 +33,6 @@ export default function Controls({
         <button type="button" className="btn" onClick={onNext} disabled={!canNext} aria-label="다음 글자">
           다음 ›
         </button>
-        {canSpeak && (
-          <button type="button" className="btn" onClick={onSpeak} title="이 단어를 들어봅니다">
-            🔊 듣기
-          </button>
-        )}
       </div>
 
       <div className="controls__row controls__row--wrap">
@@ -66,23 +61,34 @@ export default function Controls({
           </label>
         )}
 
-        <div className="field">
-          <span className="field__label">발음 단위</span>
-          <div className="segmented" role="group" aria-label="발음 단위">
-            {UNITS.map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={`segmented__btn${unit === value ? ' is-active' : ''}`}
-                aria-pressed={unit === value}
-                onClick={() => onUnitChange(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
+
+      {/* 발음 단위와 듣기는 한 묶음이다 — 듣기가 읽는 것이 바로 고른 단위다.
+          소리를 낼 수 없는 기기에서는 둘 다 의미가 없으므로 줄째 감춘다. */}
+      {canSpeak && (
+        <div className="controls__row controls__row--wrap">
+          <div className="field">
+            <span className="field__label">발음 단위</span>
+            <div className="segmented" role="group" aria-label="발음 단위">
+              {UNITS.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`segmented__btn${unit === value ? ' is-active' : ''}`}
+                  aria-pressed={unit === value}
+                  onClick={() => onUnitChange(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button type="button" className="btn" onClick={onSpeak} title="고른 단위로 들어봅니다">
+            🔊 듣기
+          </button>
+        </div>
+      )}
     </div>
   )
 }
