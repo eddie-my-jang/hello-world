@@ -412,8 +412,9 @@
 
       // 음성 목록이 비어 있어도 버튼은 보여 준다 — iOS 는 첫 발화 전까지
       // 목록이 비는 일이 흔해서, 목록으로 판단하면 버튼이 영영 안 나온다.
-      $('speak').hidden = !Speech.isSupported();
+      // 소리를 낼 수 없으면 소리 스위치도 발음 단위 줄도 의미가 없다
       $('soundRow').hidden = !Speech.isSupported();
+      $('unitRow').hidden = !Speech.isSupported();
 
       $('speak').addEventListener('click', speakUnit);
 
