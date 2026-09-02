@@ -98,7 +98,7 @@
     var state = {
       data: DECKS[0], tag: DECKS[0] && DECKS[0].tag, kind: '낱말', wi: 0, li: 0,
       typed: '', choices: {},
-      playing: false, speed: 800, unit: 'letter', zwjOff: false, codes: false, sound: false
+      playing: false, speed: 800, unit: 'off', zwjOff: false, codes: false
     };
     var timer = null;
 
@@ -203,7 +203,7 @@
         meta.appendChild(s);
       });
 
-      if (state.sound && state.unit === 'letter' && !Speech.isSilentPiece(l)) {
+      if (state.unit === 'letter' && !Speech.isSilentPiece(l)) {
         Speech.speak(l.a, { rate: 0.75 });
       }
 
@@ -264,9 +264,11 @@
       var w = word();
       var l = letters()[state.li];
       if (state.unit === 'sentence') return Speech.speak(sentenceText());
-      if (state.unit === 'word') return w && Speech.speak(w.a);
-      if (l && !Speech.isSilentPiece(l)) return Speech.speak(l.a, { rate: 0.75 });
-      return false;
+      if (state.unit === 'letter' && l && !Speech.isSilentPiece(l)) {
+        return Speech.speak(l.a, { rate: 0.75 });
+      }
+      // 단어이거나 꺼 뒀을 때 — 듣기 단추는 그래도 동작해야 하므로 낱말을 읽는다
+      return w ? Speech.speak(w.a) : false;
     }
 
     function goTo(wi, li) {
@@ -276,7 +278,7 @@
       if (changed) {
         renderBoard();
         // 낱말 단위면 낱말이 바뀔 때 한 번 읽는다
-        if (state.sound && state.unit === 'word') {
+        if (state.unit === 'word') {
           var w = word();
           if (w) Speech.speak(w.a);
         }
@@ -318,10 +320,8 @@
       if (atEnd) goTo(0, 0);
       // 시작할 때 지금 단위를 한 번 읽어 준다. 문장은 자리와 무관하므로
       // 언제나, 글자·낱말은 끝에서 되감는 경우만 건너뛴다 (goTo 가 읽는다).
-      if (state.sound) {
-        if (state.unit === 'sentence') Speech.speak(sentenceText());
-        else if (!atEnd) speakUnit();
-      }
+      if (state.unit === 'sentence') Speech.speak(sentenceText());
+      else if (state.unit !== 'off' && !atEnd) speakUnit();
       state.playing = true;
       $('play').textContent = '멈춤';
       tick();
@@ -471,10 +471,11 @@
         if (state.playing) tick();
       });
 
-      var UNITS = [['letter', 'unitLetter'], ['word', 'unitWord'], ['sentence', 'unitSentence']];
+      var UNITS = [['off', 'unitOff'], ['letter', 'unitLetter'], ['word', 'unitWord'], ['sentence', 'unitSentence']];
       function setUnit(unit) {
         state.unit = unit;
         Speech.stop();
+        if (unit !== 'off') Speech.primeFromUserGesture(); // iOS: 사람이 누른 자리에서 깨워 둔다
         UNITS.forEach(function (pair) {
           var on = pair[0] === unit;
           $(pair[1]).className = 'segmented__btn' + (on ? ' is-active' : '');
@@ -557,18 +558,10 @@
 
       // 음성 목록이 비어 있어도 버튼은 보여 준다 — iOS 는 첫 발화 전까지
       // 목록이 비는 일이 흔해서, 목록으로 판단하면 버튼이 영영 안 나온다.
-      // 소리를 낼 수 없으면 소리 스위치도 발음 단위 줄도 의미가 없다
-      $('soundRow').hidden = !Speech.isSupported();
+      // 소리를 낼 수 없으면 발음 단위 줄도 의미가 없다
       $('unitRow').hidden = !Speech.isSupported();
 
       $('speak').addEventListener('click', speakUnit);
-
-      $('sound').addEventListener('change', function () {
-        state.sound = $('sound').checked;
-        if (!state.sound) { Speech.stop(); return; }
-        Speech.primeFromUserGesture();
-        speakUnit(); // 켠 순간 지금 단위를 한 번 들려준다
-      });
 
       renderKinds();
       renderDecks();
