@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 export const ROUTES = [
   { path: '', label: '읽기판', hint: '사진 속 단어를 한 글자씩' },
   { path: 'letters', label: '자모표', hint: '자음 28자와 모음 부호' },
+  { path: 'numbers', label: '숫자', hint: '낱개부터 천의 자리까지' },
 ]
 
 function readHash() {

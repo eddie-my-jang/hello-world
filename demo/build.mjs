@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 
 import { LETTERS, FAMILIES, MARKS, LONGS, EXTRAS } from '../src/lib/letters.js'
 import { SAMPLES } from '../src/lib/samples.js'
+import { BIG, COMPOSED, DIGITS, HUNDREDS, NUMBER_WORDS, ONES, PLACES, TEENS, TENS } from '../src/lib/numbers.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repo = join(here, '..')
@@ -53,13 +54,26 @@ function inlineModule(source) {
   return stripped.trim()
 }
 
+/** import 줄에서 가져오는 이름만 뽑는다 */
+function importedNames(source) {
+  return source
+    .split('\n')
+    .filter((line) => line.startsWith('import '))
+    .flatMap((line) => {
+      const inside = line.match(/\{([^}]*)\}/)
+      return inside ? inside[1].split(',').map((name) => name.trim()).filter(Boolean) : []
+    })
+}
+
 // <script> 안에 들어가므로 '<' 를 막아 둔다. 지금 데이터에는 없지만,
 // 나중에 설명글에 "</script>" 같은 문자열이 들어가면 페이지가 깨진다.
 function inlineJson(value) {
   return JSON.stringify(value, null, 2).replace(/</g, '\\u003C')
 }
 
-const data = { SAMPLES, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS }
+// WORDS 는 화면에 그리지 않는다 — 사전이 쓴다 (아래 inlineDictionary 참고)
+const NUMBERS = { DIGITS, ONES, TEENS, TENS, HUNDREDS, BIG, PLACES, COMPOSED, WORDS: NUMBER_WORDS }
+const data = { SAMPLES, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS, NUMBERS }
 
 // 소리 모듈도 그대로 넣는다. 읽기판에도 stop() 이 있어서 이름이 겹치므로
 // 객체로 감싸 Speech.speak(...) 처럼 쓰게 한다.
@@ -82,8 +96,25 @@ function inlineDictionary(source) {
       throw new Error(`dictionary.js 에 ${name} 이 없습니다`)
     }
   }
-  return `(function () {\n  var SAMPLES = DECKS;\n  var MARKS = VOWEL_MARKS;\n`
-    + `${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
+  // 걷어낸 import 를 앞머리에서 하나씩 다시 이어 준다.
+  // 데모에서는 예문이 DECKS, 모음 부호가 VOWEL_MARKS 라는 이름이다.
+  const prologue = {
+    SAMPLES: 'DECKS',
+    MARKS: 'VOWEL_MARKS',
+    NUMBER_WORDS: 'NUMBERS.WORDS',
+    // 아래 셋은 app.js 에 이미 같은 이름으로 있다
+    LETTERS: null, LONGS: null, isArabicLetter: null, stripHarakat: null, readWord: null,
+  }
+  for (const name of importedNames(source)) {
+    if (!(name in prologue)) {
+      throw new Error(`dictionary.js 가 새로 가져오는 ${name} 을 데모에서 이어 주지 않았습니다`)
+    }
+  }
+  const head = Object.entries(prologue)
+    .filter(([, from]) => from)
+    .map(([name, from]) => `  var ${name} = ${from};`)
+    .join('\n')
+  return `(function () {\n${head}\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
 }
 
 const [template, appJs, styles, engine, speech, dictionary] = await Promise.all([
@@ -165,3 +196,5 @@ console.log(`demo/build/artifact.html ${kb(page.length)}  (아티팩트 용)`)
 console.log(`  아이콘 ${ICONS.length}개 + manifest + sw.js`)
 console.log(`  예문 ${SAMPLES.length} · 자음 ${LETTERS.length} · 무리 ${FAMILIES.length} ·`
   + ` 부호 ${MARKS.length} · 장모음 ${LONGS.length} · 그밖 ${EXTRAS.length}`)
+console.log(`  숫자 ${[DIGITS, ONES, TEENS, TENS, HUNDREDS, BIG, PLACES, COMPOSED]
+  .reduce((n, rows) => n + rows.length, 0)} · 사전에 든 숫자 낱말 ${NUMBER_WORDS.length}`)
