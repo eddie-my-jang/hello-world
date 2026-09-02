@@ -9,17 +9,6 @@
 
 /* ── 아래는 이 데모 페이지에만 있는 것들 ──────────────────────────────────── */
 
-.badge {
-  align-self: flex-start;
-  font-size: 11px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--rubric);
-  border: 1px solid var(--rubric);
-  border-radius: 999px;
-  padding: 2px 9px;
-}
-
 /* 예문 고르기 */
 .decks { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
 .deck {
@@ -83,15 +72,15 @@ kbd {
 
 <div class="app">
   <header class="header">
-    <span class="badge">데모 · 서버 없이 동작</span>
     <h1 class="header__title">아랍어 읽기</h1>
     <nav class="tabs" aria-label="페이지">
       <button type="button" class="tab is-active" id="tabReader" aria-current="page">읽기판</button>
       <button type="button" class="tab" id="tabLetters">자모표</button>
       <button type="button" class="tab" id="tabNumbers">숫자</button>
     </nav>
-    <p class="header__sub" id="headerSub">사진 속 단어를 한 글자씩</p>
   </header>
+
+  <p class="header__sub" id="headerSub">사진 속 단어를 한 글자씩</p>
 
   <!-- ── 읽기판 ─────────────────────────────────────────────────────────── -->
   <div class="page" id="pageReader">
