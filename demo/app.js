@@ -72,6 +72,7 @@
   var VOWEL_MARKS = DATA.MARKS || [];
   var LONGS = DATA.LONGS || [];
   var EXTRAS = DATA.EXTRAS || [];
+  var NUMBERS = DATA.NUMBERS || {};
 
   /* ═══ 발음 옮기기 ══════════════════════════════════════════════════════════
      build.mjs 가 src/lib/transliterate.js 를 여기에 그대로 넣는다.
@@ -852,12 +853,96 @@
     return { init: init };
   })();
 
+  /* ═══ 숫자판 ═════════════════════════════════════════════════════════════
+     저장소의 src/pages/NumbersPage.jsx 와 같은 화면이다.
+     데이터는 src/lib/numbers.js 에서 그대로 실어 온다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var numbers = (function () {
+    function toArabicDigits(n) {
+      return String(n).replace(/[0-9]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[Number(d)]; });
+    }
+
+    function digit(row) {
+      var box = document.createElement('div');
+      box.className = 'digit';
+      box.innerHTML = '<span class="digit__ar" lang="ar"></span>'
+        + '<span class="digit__n"></span><span class="digit__ko"></span>';
+      box.querySelector('.digit__ar').textContent = toArabicDigits(row.v);
+      box.querySelector('.digit__n').textContent = row.v;
+      box.querySelector('.digit__ko').textContent = row.k;
+      return box;
+    }
+
+    function row(item, speakable) {
+      var box = document.createElement(speakable ? 'button' : 'div');
+      // 십만·백만은 자릿수가 길어 한 줄에 안 들어간다. 그때만 작게 그린다.
+      box.className = 'num' + (speakable ? ' num--tap' : '');
+      if (speakable) box.type = 'button';
+      box.innerHTML = '<span class="num__d"><b lang="ar"></b><i></i></span>'
+        + '<span class="num__body"><span class="num__ar" lang="ar" dir="rtl"></span>'
+        + '<span class="num__say"><b></b><i></i></span></span>';
+      if (String(item.v).length >= 6) box.querySelector('.num__d').className += ' num__d--long';
+      box.querySelector('.num__d b').textContent = toArabicDigits(item.v);
+      box.querySelector('.num__d i').textContent = item.v.toLocaleString('ko');
+      box.querySelector('.num__ar').textContent = item.a;
+      box.querySelector('.num__say b').textContent = item.k;
+      box.querySelector('.num__say i').textContent = item.r;
+      if (item.note) {
+        var note = document.createElement('span');
+        note.className = 'num__note';
+        note.textContent = item.note;
+        box.querySelector('.num__body').appendChild(note);
+      }
+      if (speakable) {
+        box.title = item.a + ' 듣기';
+        box.addEventListener('click', function () {
+          Speech.primeFromUserGesture();
+          Speech.speak(item.a);
+        });
+      }
+      return box;
+    }
+
+    function place(item) {
+      var box = document.createElement('div');
+      box.className = 'place';
+      box.innerHTML = '<span class="place__name"></span>'
+        + '<span class="place__ar" lang="ar" dir="rtl"></span><span class="place__ko"></span>';
+      box.querySelector('.place__name').textContent = item.name;
+      box.querySelector('.place__ar').textContent = item.a;
+      box.querySelector('.place__ko').textContent = item.k;
+      return box;
+    }
+
+    function fill(id, rows, make) {
+      var host = $(id);
+      if (!host) return;
+      host.textContent = '';
+      (rows || []).forEach(function (item) { host.appendChild(make(item)); });
+    }
+
+    function init() {
+      var speakable = Speech.isSupported();
+      $('numTapHint').textContent = speakable ? '눌러서 듣기' : '기본 꼴';
+      fill('digits', NUMBERS.DIGITS, digit);
+      fill('numPlaces', NUMBERS.PLACES, place);
+      [['numOnes', 'ONES'], ['numTeens', 'TEENS'], ['numTens', 'TENS'],
+       ['numHundreds', 'HUNDREDS'], ['numBig', 'BIG'], ['numComposed', 'COMPOSED']]
+        .forEach(function (pair) {
+          fill(pair[0], NUMBERS[pair[1]], function (item) { return row(item, speakable); });
+        });
+    }
+
+    return { init: init };
+  })();
+
   /* ═══ 라우팅 ══════════════════════════════════════════════════════════════
      해시 라우팅. 저장소의 src/lib/router.js 와 같은 방식이다.
      ═══════════════════════════════════════════════════════════════════════ */
   var PAGES = {
     '': { page: 'pageReader', tab: 'tabReader', sub: '사진 속 단어를 한 글자씩' },
-    'letters': { page: 'pageLetters', tab: 'tabLetters', sub: '자음 28자와 모음 부호' }
+    'letters': { page: 'pageLetters', tab: 'tabLetters', sub: '자음 28자와 모음 부호' },
+    'numbers': { page: 'pageNumbers', tab: 'tabNumbers', sub: '낱개부터 천의 자리까지' }
   };
 
   function currentRoute() {
@@ -881,9 +966,11 @@
 
   $('tabReader').addEventListener('click', function () { window.location.hash = '#/'; });
   $('tabLetters').addEventListener('click', function () { window.location.hash = '#/letters'; });
+  $('tabNumbers').addEventListener('click', function () { window.location.hash = '#/numbers'; });
   window.addEventListener('hashchange', function () { applyRoute(); window.scrollTo({ top: 0 }); });
 
   reader.init();
   chart.init();
+  numbers.init();
   applyRoute();
 })();

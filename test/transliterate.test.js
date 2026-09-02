@@ -19,9 +19,10 @@ test('예시 단어의 글자별 발음을 그대로 다시 만들어 낸다', (
 })
 
 test('예시 단어의 로마자도 다시 만들어 낸다', () => {
-  // 단어 수준 로마자는 사람이 고른 값이라 관례적으로 첫머리 함자를 빼기도 한다
-  // (أَنَا → anā). 함자 표시만 걷어내고 나머지가 같은지 본다.
-  const noHamza = (s) => s.replace(/ʾ/g, '')
+  // 단어 수준 로마자는 사람이 고른 값이라 관례가 섞인다 — 첫머리 함자를 빼거나
+  // (أَنَا → anā), 앞에 붙는 وَ 를 붙임표로 떼어 보이거나 (وَعِشْرُون → wa-ʿishrūn).
+  // 둘 다 적는 방식일 뿐이므로 걷어내고 나머지가 같은지 본다.
+  const noHamza = (s) => s.replace(/ʾ/g, '').replace(/-/g, '')
   for (const sample of SAMPLES) {
     for (const word of sample.w) {
       assert.equal(noHamza(readWord(word.a).r), noHamza(word.r), word.a)

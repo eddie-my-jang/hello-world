@@ -1,5 +1,6 @@
 import ReaderPage from './pages/ReaderPage.jsx'
 import LettersPage from './pages/LettersPage.jsx'
+import NumbersPage from './pages/NumbersPage.jsx'
 import { ROUTES, useRoute } from './lib/router.js'
 
 export default function App() {
@@ -26,7 +27,9 @@ export default function App() {
         <p className="header__sub">{active.hint}</p>
       </header>
 
-      {active.path === 'letters' ? <LettersPage /> : <ReaderPage />}
+      {active.path === 'letters' && <LettersPage />}
+      {active.path === 'numbers' && <NumbersPage />}
+      {active.path === '' && <ReaderPage />}
 
       <footer className="footer">
         <p>오른쪽 → 왼쪽 순서로 읽습니다. 장모음(―)은 앞 모음을 길게 늘여 주세요.</p>

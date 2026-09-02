@@ -569,6 +569,83 @@ html, body {
 .item__ex .k { color: var(--ink-2); font-weight: 500; }
 .item__note { margin: 0; font-size: 13px; color: var(--ink-2); }
 
+/* ── 숫자판 ───────────────────────────────────────────────────────────────── */
+
+.digits { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.digit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  min-width: 0;
+}
+.digit__ar { font-family: var(--f-ar); font-size: 30px; line-height: 1.4; color: var(--rubric); }
+.digit__n { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); }
+.digit__ko { font-size: 12px; color: var(--ink-2); }
+
+.nums { display: flex; flex-direction: column; gap: 8px; }
+.num {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 13px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 11px;
+  text-align: left;
+  color: inherit;
+  min-width: 0;
+}
+.num--tap { font: inherit; cursor: pointer; transition: border-color 0.15s linear; }
+.num--tap:hover { border-color: var(--rubric); }
+
+.num__d {
+  /* 백만까지 가면 ١٠٠٠٠٠٠ 처럼 길어진다. 칸을 넓혀 두고 넘치면 접는다. */
+  flex: 0 0 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding-top: 2px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.num__d b { font-family: var(--f-ar); font-size: 20px; line-height: 1.45; font-weight: 500; color: var(--rubric); }
+.num__d i { font-family: var(--f-mono); font-style: normal; font-size: 10.5px; color: var(--ink-3); }
+.num__d--long b { font-size: 14px; line-height: 1.7; }
+.num__d--long i { font-size: 9.5px; }
+
+.num__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.num__ar { font-family: var(--f-ar); font-size: 25px; line-height: 1.7; color: var(--ink); text-align: left; }
+.num__say { display: flex; gap: 9px; align-items: baseline; flex-wrap: wrap; }
+.num__say b { font-size: 15px; font-weight: 600; }
+.num__say i { font-size: 12.5px; color: var(--ink-3); }
+.num__note { font-size: 12.5px; color: var(--ink-2); line-height: 1.6; }
+
+.places { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.place {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--card-2);
+  border-radius: 10px;
+  min-width: 0;
+}
+.place__name { font-size: 12px; color: var(--ink-3); }
+.place__ar { font-family: var(--f-ar); font-size: 21px; line-height: 1.7; color: var(--ink); text-align: left; }
+.place__ko { font-size: 12.5px; color: var(--ink-2); }
+
+@media (max-width: 420px) {
+  .num { gap: 9px; padding: 10px; }
+  .num__d { flex-basis: 64px; }
+  .num__ar { font-size: 22px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }

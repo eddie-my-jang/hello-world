@@ -12,7 +12,11 @@
 //        test/transliterate.test.js 가 어긋나는지 지킨다.
 //        단어 수준의 k·r·m 은 사람이 고른 값이다.
 
-export const SAMPLES = [
+import { numberDecks } from './numbers.js'
+
+// 손으로 적은 예문. 숫자는 numbers.js 에서 만들어 뒤에 잇는다 —
+// 숫자 페이지와 같은 자리에서 고쳐야 둘이 어긋나지 않는다.
+const WRITTEN = [
   {
     tag: '책',
     kind: '낱말',
@@ -2927,6 +2931,9 @@ export const SAMPLES = [
     ],
   },
 ]
+
+/** 손으로 적은 것 + 숫자 */
+export const SAMPLES = [...WRITTEN, ...numberDecks()]
 
 /** 처음 띄울 예문 */
 export const SAMPLE = SAMPLES[0]

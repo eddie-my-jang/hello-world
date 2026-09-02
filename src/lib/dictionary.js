@@ -12,6 +12,7 @@
 
 import { SAMPLES } from './samples.js'
 import { LETTERS, LONGS, MARKS } from './letters.js'
+import { NUMBER_WORDS } from './numbers.js'
 import { isArabicLetter, stripHarakat } from './arabic.js'
 import { readWord } from './transliterate.js'
 
@@ -33,6 +34,7 @@ function buildIndex() {
   LETTERS.forEach((letter) => letter.ex && add(letter.ex.a, letter.ex.k, '', letter.ex.m))
   LONGS.forEach((row) => add(row.ex, row.exk, '', row.m))
   MARKS.forEach((row) => add(row.ex, row.exk, '', ''))
+  NUMBER_WORDS.forEach((row) => add(row.a, row.k, row.r, row.m))
 
   return index
 }
