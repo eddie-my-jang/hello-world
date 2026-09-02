@@ -1,4 +1,7 @@
+// 재생 중에 무엇을 읽을지. '끄기'가 예전의 소리 체크를 대신한다 —
+// 따로 둘 이유가 없고, 이렇게 두면 무엇이 언제 소리 나는지가 한눈에 보인다.
 const UNITS = [
+  ['off', '끄기'],
   ['letter', '글자'],
   ['word', '단어'],
   ['sentence', '문장'],
@@ -18,8 +21,6 @@ export default function Controls({
   onUnitChange,
   canSpeak,
   onSpeak,
-  sound,
-  onSoundChange,
 }) {
   return (
     <div className="controls">
@@ -37,7 +38,7 @@ export default function Controls({
 
       <div className="controls__row controls__row--wrap">
         <label className="field">
-          <span className="field__label">속도</span>
+          <span className="field__label">재생 속도</span>
           <input
             type="range"
             min="250"
@@ -49,17 +50,6 @@ export default function Controls({
           />
           <span className="field__value">{(speed / 1000).toFixed(2)}초</span>
         </label>
-
-        {canSpeak && (
-          <label className="switch" title="재생하면서 소리를 냅니다">
-            <input
-              type="checkbox"
-              checked={sound}
-              onChange={(e) => onSoundChange(e.target.checked)}
-            />
-            소리
-          </label>
-        )}
 
       </div>
 
@@ -84,7 +74,7 @@ export default function Controls({
             </div>
           </div>
 
-          <button type="button" className="btn" onClick={onSpeak} title="고른 단위로 들어봅니다">
+          <button type="button" className="btn" onClick={onSpeak} title="지금 자리를 들어봅니다">
             🔊 듣기
           </button>
         </div>

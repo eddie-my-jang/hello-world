@@ -123,12 +123,9 @@ kbd {
         </div>
         <div class="controls__row controls__row--wrap">
           <label class="field">
-            <span class="field__label">속도</span>
+            <span class="field__label">재생 속도</span>
             <input type="range" id="speed" min="250" max="2000" step="50" value="1450">
             <span class="field__value" id="speedVal">0.80초</span>
-          </label>
-          <label class="switch" id="soundRow" hidden title="재생하면서 소리를 냅니다">
-            <input type="checkbox" id="sound"> 소리
           </label>
         </div>
 
@@ -137,7 +134,8 @@ kbd {
           <div class="field">
             <span class="field__label">발음 단위</span>
             <div class="segmented" role="group" aria-label="발음 단위">
-              <button type="button" class="segmented__btn is-active" id="unitLetter" aria-pressed="true">글자</button>
+              <button type="button" class="segmented__btn is-active" id="unitOff" aria-pressed="true">끄기</button>
+              <button type="button" class="segmented__btn" id="unitLetter" aria-pressed="false">글자</button>
               <button type="button" class="segmented__btn" id="unitWord" aria-pressed="false">단어</button>
               <button type="button" class="segmented__btn" id="unitSentence" aria-pressed="false">문장</button>
             </div>

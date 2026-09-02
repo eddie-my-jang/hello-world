@@ -24,11 +24,10 @@ export default function ReaderPage() {
   const [letterIndex, setLetterIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(800) // 글자 하나당 ms
-  const [unit, setUnit] = useState('letter') // 발음 단위: letter | word | sentence
+  const [unit, setUnit] = useState('off') // 재생 중 발음 단위: off | letter | word | sentence
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [preview, setPreview] = useState(null)
-  const [sound, setSound] = useState(false) // 재생하면서 소리 낼지
   const speechAvailable = canSpeak()
 
   const words = result.w
@@ -45,15 +44,15 @@ export default function ReaderPage() {
 
   // 글자: 짚을 때마다. 장모음·묵음은 혼자서는 소리가 없어 건너뛴다.
   useEffect(() => {
-    if (!sound || unit !== 'letter' || !letter || isSilentPiece(letter)) return
+    if (unit !== 'letter' || !letter || isSilentPiece(letter)) return
     speak(letter.a, { rate: 0.75 })
-  }, [sound, unit, letter])
+  }, [unit, letter])
 
   // 낱말: 낱말이 바뀔 때 한 번
   useEffect(() => {
-    if (!sound || unit !== 'word' || !word) return
+    if (unit !== 'word' || !word) return
     speak(word.a)
-  }, [sound, unit, word])
+  }, [unit, word])
 
   // ── 자동 재생 ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -103,9 +102,11 @@ export default function ReaderPage() {
   /** 지금 고른 단위로 읽어 준다 */
   const speakUnit = useCallback(() => {
     if (unit === 'sentence') return speak(sentence)
-    if (unit === 'word') return word && speak(word.a)
-    if (letter && !isSilentPiece(letter)) return speak(letter.a, { rate: 0.75 })
-    return false
+    if (unit === 'letter' && letter && !isSilentPiece(letter)) {
+      return speak(letter.a, { rate: 0.75 })
+    }
+    // 단어이거나 소리를 꺼 뒀을 때 — 듣기 버튼은 그래도 동작해야 하므로 낱말을 읽는다
+    return word ? speak(word.a) : false
   }, [unit, sentence, word, letter])
 
   const togglePlay = useCallback(() => {
@@ -124,13 +125,11 @@ export default function ReaderPage() {
       // 글자·낱말이 바뀔 때마다 이어서 읽는다.
       // 문장은 자리와 무관하므로 언제나 읽고, 글자·낱말은 끝에서 되감는
       // 경우만 건너뛴다 — 되감으면 효과가 알아서 새 자리를 읽는다.
-      if (sound) {
-        if (unit === 'sentence') speak(sentence)
-        else if (!atEnd) speakUnit()
-      }
+      if (unit === 'sentence') speak(sentence)
+      else if (unit !== 'off' && !atEnd) speakUnit()
       return true
     })
-  }, [atEnd, sound, unit, sentence, speakUnit])
+  }, [atEnd, unit, sentence, speakUnit])
 
   const pickSample = useCallback((tag) => {
     const found = SAMPLES.find((sample) => sample.tag === tag)
@@ -292,15 +291,10 @@ export default function ReaderPage() {
               onUnitChange={(next) => {
                 setUnit(next)
                 stopSpeech()
+                if (next !== 'off') primeFromUserGesture() // iOS: 사람이 누른 자리에서 깨워 둔다
               }}
               canSpeak={speechAvailable}
               onSpeak={speakUnit}
-              sound={sound}
-              onSoundChange={(next) => {
-                setSound(next)
-                if (!next) stopSpeech()
-                else primeFromUserGesture()
-              }}
             />
 
             <WordChips words={words} wordIndex={wordIndex} onSelect={selectWord} />
