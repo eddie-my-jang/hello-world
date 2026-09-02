@@ -24,8 +24,9 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <p className="header__sub">{active.hint}</p>
       </header>
+
+      <p className="header__sub">{active.hint}</p>
 
       {active.path === 'letters' && <LettersPage />}
       {active.path === 'numbers' && <NumbersPage />}
