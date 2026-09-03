@@ -1,11 +1,18 @@
+import { useEffect, useState } from 'react'
 import ReaderPage from './pages/ReaderPage.jsx'
 import LettersPage from './pages/LettersPage.jsx'
 import NumbersPage from './pages/NumbersPage.jsx'
+import FontPicker from './components/FontPicker.jsx'
+import { applyFont, readStored } from './lib/font.js'
 import { ROUTES, useRoute } from './lib/router.js'
 
 export default function App() {
   const [route, go] = useRoute()
+  const [font, setFont] = useState(readStored)
   const active = ROUTES.find((r) => r.path === route) || ROUTES[0]
+
+  // 글꼴은 :root 에 표시로만 붙는다 — 스타일시트가 그것을 보고 갈아 끼운다
+  useEffect(() => { applyFont(font) }, [font])
 
   return (
     <div className="app">
@@ -26,7 +33,10 @@ export default function App() {
         </nav>
       </header>
 
-      <p className="header__sub">{active.hint}</p>
+      <div className="subhead">
+        <p className="header__sub">{active.hint}</p>
+        <FontPicker font={font} onChange={setFont} />
+      </div>
 
       {active.path === 'letters' && <LettersPage />}
       {active.path === 'numbers' && <NumbersPage />}

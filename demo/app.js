@@ -961,6 +961,37 @@
     return { init: init };
   })();
 
+  /* ═══ 글꼴 ════════════════════════════════════════════════════════════════
+     저장소의 src/lib/font.js 와 같다. 고른 것은 :root 의 data-font 로만
+     나타내고, 스타일시트가 그 표시를 보고 --f-ar 하나를 갈아 끼운다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var fonts = (function () {
+    var KEY = 'arabic-reader.font';
+    var BUTTONS = { naskh: 'fontNaskh', sans: 'fontSans' };
+
+    function apply(name) {
+      var font = BUTTONS[name] ? name : 'naskh';
+      document.documentElement.setAttribute('data-font', font);
+      Object.keys(BUTTONS).forEach(function (key) {
+        var on = key === font;
+        $(BUTTONS[key]).className = 'fonts__btn' + (on ? ' is-active' : '');
+        $(BUTTONS[key]).setAttribute('aria-pressed', String(on));
+      });
+      try { window.localStorage.setItem(KEY, font); } catch (e) { /* 못 적어도 이번 판은 그대로 */ }
+    }
+
+    function init() {
+      var saved = null;
+      try { saved = window.localStorage.getItem(KEY); } catch (e) { /* 사생활 보호 창 */ }
+      apply(saved);
+      Object.keys(BUTTONS).forEach(function (key) {
+        $(BUTTONS[key]).addEventListener('click', function () { apply(key); });
+      });
+    }
+
+    return { init: init };
+  })();
+
   /* ═══ 라우팅 ══════════════════════════════════════════════════════════════
      해시 라우팅. 저장소의 src/lib/router.js 와 같은 방식이다.
      ═══════════════════════════════════════════════════════════════════════ */
@@ -994,6 +1025,7 @@
   $('tabNumbers').addEventListener('click', function () { window.location.hash = '#/numbers'; });
   window.addEventListener('hashchange', function () { applyRoute(); window.scrollTo({ top: 0 }); });
 
+  fonts.init();
   reader.init();
   chart.init();
   numbers.init();

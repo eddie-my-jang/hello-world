@@ -98,8 +98,9 @@ alif/waw/ya 는 앞 모음을 보고 장모음인지 이중모음인지 가릅�
 
 ### 2. 아랍어는 필기체라 OCR 이 글자별 좌표를 주지 않는다
 
-→ 사진 위에 직접 칠하지 않습니다. 인식한 텍스트를 앱이 자체 폰트(Noto Naskh Arabic)로
-다시 그리고, 그 위에서 하이라이트합니다. 사진은 참고용 썸네일로만 남습니다.
+→ 사진 위에 직접 칠하지 않습니다. 인식한 텍스트를 앱이 자체 폰트(Noto Naskh Arabic 또는
+Noto Sans Arabic — 아래 4번)로 다시 그리고, 그 위에서 하이라이트합니다.
+사진은 참고용 썸네일로만 남습니다.
 
 ### 3. 글자를 `<span>` 으로 쪼개면 단어가 끊어져 보인다
 
@@ -130,7 +131,25 @@ alif/waw/ya 는 앞 모음을 보고 장모음인지 이중모음인지 가릅�
 > **색과 배경색만** 바꿉니다. `transform`, `display: inline-block`, `letter-spacing`,
 > `margin`/`padding` 을 주면 이음선이 다시 끊깁니다.
 
-### 4. 숫자는 글과 반대 방향으로 쓰이고, 읽는 차례도 뒤집힌다
+### 4. 같은 글자도 글꼴에 따라 아주 달라 보인다
+
+교재로 익힌 글자를 길에서 못 알아보는 일이 흔합니다. 붓으로 쓴 곡선의 **필사체**(Naskh)와
+획을 곧게 편 **표지판체**(Sans)는 뼈대가 같아도 인상이 전혀 다릅니다 —
+`مَدْرَسَة` 하나를 두 벌로 그려 보면 바로 보입니다.
+
+→ 두 벌을 다 싣고 눌러서 바꿉니다. 고른 것은 `:root` 의 `data-font` 로만 나타내고,
+스타일시트가 그 표시를 보고 `--f-ar` 하나를 갈아 끼웁니다. 글꼴을 쓰는 스물몇 자리를
+따로 고칠 일이 없습니다.
+
+```css
+:root                  { --f-ar: var(--f-ar-naskh); }
+:root[data-font='sans'] { --f-ar: var(--f-ar-sans); }
+```
+
+고른 것은 `localStorage` 에 적어 다음에 열 때 그대로 뜹니다. 사생활 보호 창처럼
+적어 둘 수 없는 자리에서는 이번 판에만 입히고 넘어갑니다 (`src/lib/font.js`).
+
+### 5. 숫자는 글과 반대 방향으로 쓰이고, 읽는 차례도 뒤집힌다
 
 아랍어 글은 오른쪽부터 읽지만 **숫자만은 왼쪽부터** 씁니다 — `١٩٩٥` 는 그대로 1995 입니다.
 브라우저가 알아서 처리해 주지만, 낱개 숫자를 사이를 띄워 늘어놓으면(`٠ ١ ٢`) 유니코드가
@@ -185,6 +204,7 @@ vite.config.js           개발 서버에서 /api/read 를 같은 파일로 띄�
 src/
   App.jsx                셸 — 탭과 라우팅
   lib/router.js          해시 라우터
+  lib/font.js            아랍어 글꼴 고르기 (필사체 · 표지판체)
   lib/arabic.js          ZWJ 결합 처리, 글자 모양 생성, 하라카트 제거, 글자 분해
   lib/transliterate.js   붙어 있는 부호대로 한글·로마자로 옮기기 (서버 없이)
   lib/dictionary.js      부호 없이 입력한 글을 앱이 아는 낱말에서 찾기
@@ -206,6 +226,7 @@ src/
     Uploader.jsx         사진 업로드 (모바일에서 카메라 열림)
     TextEditor.jsx       원문 수정 · 직접 입력
     SamplePicker.jsx     예문 고르기 (갈래 + 찾기)
+    FontPicker.jsx       아랍어 글꼴 고르기
     DictPicks.jsx        읽기가 갈리는 낱말 고르기
     LetterTile.jsx       자모표 격자 한 칸
     LetterDetail.jsx     펼친 글자 — 네 모양 + 부호별 발음
@@ -217,6 +238,7 @@ test/letters.test.js     자모표 데이터 무결성 테스트
 test/samples.test.js     예시 단어 무결성 테스트
 test/transliterate.test.js  발음 옮기기 테스트
 test/dictionary.test.js  사전 찾기 테스트
+test/font.test.js        글꼴 고르기 테스트
 test/numbers.test.js     숫자 데이터 무결성 테스트
 test/speech.test.js      음성 고르기 테스트
 ```
