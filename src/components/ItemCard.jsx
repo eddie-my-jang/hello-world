@@ -2,7 +2,7 @@
  * 모음 부호·장모음·그밖의 글자를 담는 줄 카드.
  * 좁은 화면에서 표는 설명 칸이 눌려 못 읽게 되므로 카드로 쌓는다.
  */
-export default function ItemCard({ glyph, ink, wide, name, sound, ex, note }) {
+export default function ItemCard({ glyph, ink, wide, name, sound, ex, note, children }) {
   return (
     <div className="item">
       <div
@@ -24,6 +24,7 @@ export default function ItemCard({ glyph, ink, wide, name, sound, ex, note }) {
           </div>
         )}
         {note && <p className="item__note">{note}</p>}
+        {children}
       </div>
     </div>
   )

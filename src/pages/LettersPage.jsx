@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import LetterTile from '../components/LetterTile.jsx'
 import LetterDetail from '../components/LetterDetail.jsx'
 import ItemCard from '../components/ItemCard.jsx'
+import SyllableTable from '../components/SyllableTable.jsx'
 import { LETTERS, FAMILIES, MARKS, LONGS, EXTRAS } from '../lib/letters.js'
+import { syllablesOfExtra } from '../lib/syllables.js'
 
 /** 격자가 지금 몇 열인지 잰다. 펼친 카드를 그 줄 끝에 넣어야 구멍이 안 생긴다. */
 function useColumnCount(ref) {
@@ -66,7 +68,7 @@ export default function LettersPage() {
       <section className="section">
         <div className="section__head">
           <h2>자음 28자</h2>
-          <span>글자를 눌러 자세히 보기</span>
+          <span>눌러서 결합표 보기</span>
         </div>
 
         <div className="segmented" role="group" aria-label="정렬 방식">
@@ -150,6 +152,12 @@ export default function LettersPage() {
           늘이는 역할만 하므로, 읽기판에서 한글 자리에 <b className="mark-long">―</b> 로 표시됩니다.
         </p>
 
+        <p className="note">
+          자음 스물여덟 자마다 이 짝들을 다 붙여 본 표가 있습니다 — <b>위 격자에서 글자를 누르면</b>
+          짧은 소리·길게 늘인 소리·미끄러지는 소리·탄윈·샷다까지 열다섯 칸이 펼쳐지고,
+          칸을 누르면 그 소리를 들려줍니다.
+        </p>
+
         <div className="items">
           {LONGS.map((long) => (
             <ItemCard
@@ -179,7 +187,9 @@ export default function LettersPage() {
               name={extra.name}
               ex={extra.ex}
               note={extra.note}
-            />
+            >
+              <SyllableTable cells={syllablesOfExtra(extra.a)} />
+            </ItemCard>
           ))}
         </div>
       </section>
