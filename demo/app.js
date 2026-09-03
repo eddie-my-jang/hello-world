@@ -97,7 +97,7 @@
   /* ═══ 읽기판 ══════════════════════════════════════════════════════════════ */
   var reader = (function () {
     var state = {
-      data: DECKS[0], tag: DECKS[0] && DECKS[0].tag, kind: '낱말', wi: 0, li: 0,
+      data: DECKS[0], tag: DECKS[0] && DECKS[0].tag, kind: '낱말', query: '', wi: 0, li: 0,
       typed: '', choices: {},
       playing: false, speed: 800, unit: 'off', zwjOff: false, codes: false
     };
@@ -108,7 +108,7 @@
     function lastLetter() { return state.li >= letters().length - 1; }
     function lastWord() { return state.wi >= state.data.w.length - 1; }
 
-    /* 예문이 예순 개가 넘어 낱말과 문장을 갈라서 보여 준다 */
+    /* 예문이 수백 개라 낱말·문장·숫자로 가르고, 그 안에서 다시 찾아 쓴다 */
     function kindCounts() {
       var counts = [];
       DECKS.forEach(function (deck) {
@@ -131,6 +131,8 @@
         b.children[1].textContent = pair[1];
         b.addEventListener('click', function () {
           state.kind = pair[0];
+          state.query = '';
+          $('find').value = '';
           renderKinds();
           renderDecks();
         });
@@ -138,10 +140,28 @@
       });
     }
 
+    /** 이 칩이 검색어에 걸리는가 — 한글 뜻으로도, 아랍어로도 찾는다 */
+    function matches(deck, query) {
+      if (!query) return true;
+      var needle = stripHarakat(query.toLowerCase());
+      var hay = [deck.tag, deck.t];
+      deck.w.forEach(function (w) {
+        hay.push(w.k, w.r, w.m, stripHarakat(w.a));
+      });
+      return hay.some(function (text) {
+        return text && text.toLowerCase().indexOf(needle) !== -1;
+      });
+    }
+
     function renderDecks() {
       var host = $('decks');
       host.innerHTML = '';
-      DECKS.filter(function (deck) { return deck.kind === state.kind; }).forEach(function (deck) {
+      var shown = DECKS.filter(function (deck) {
+        return deck.kind === state.kind && matches(deck, state.query);
+      });
+      $('findCount').textContent = state.query ? shown.length + '개' : '';
+      $('noHit').hidden = shown.length > 0;
+      shown.forEach(function (deck) {
         var b = document.createElement('button');
         b.className = 'deck';
         b.type = 'button';
@@ -462,6 +482,11 @@
     }
 
     function init() {
+      $('find').addEventListener('input', function () {
+        state.query = $('find').value.trim();
+        renderDecks();
+      });
+
       $('play').addEventListener('click', togglePlay);
       $('next').addEventListener('click', function () { stop(); next(); });
       $('prev').addEventListener('click', function () { stop(); prev(); });

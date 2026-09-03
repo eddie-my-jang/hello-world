@@ -70,3 +70,27 @@ test('아랍어가 아닌 것은 버린다', () => {
 test('한 번에 여덟 낱말까지', () => {
   assert.equal(readTextSmart(Array(12).fill('كتاب').join(' ')).w.length, 8)
 })
+
+test('함자를 흘려 쳐도 찾는다', () => {
+  // 아랍어 자판과 붙여넣은 글은 함자를 자주 흘린다.
+  // 받침대만 남기고 쳐도 사전에 든 표기를 찾아 줘야 한다.
+  const cases = [
+    ['اين', 'أَيْنَ'],   // أ → ا
+    ['سوال', 'سُؤَال'],  // ؤ → و
+    ['شاطي', 'شَاطِئ'],  // ئ → ي
+    ['مدرسه', 'مَدْرَسَة'], // ة → ه
+  ]
+  for (const [typed, want] of cases) {
+    const found = lookup(typed)
+    assert.ok(found.some((entry) => entry.a === want), `${typed} → ${want}`)
+  }
+  // 찾아 준 뒤에는 사전에 든 원래 표기로 읽는다
+  assert.equal(readTextSmart('اين').w[0].a, 'أَيْنَ')
+})
+
+test('낱말과 문장이 넉넉히 들어 있다', () => {
+  // 사진 없이도 오래 눌러 볼 만큼은 되어야 한다
+  const { skeletons, words } = size()
+  assert.ok(skeletons >= 300, `뼈대 ${skeletons}개`)
+  assert.ok(words >= 350, `낱말 ${words}개`)
+})

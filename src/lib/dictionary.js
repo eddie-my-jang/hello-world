@@ -16,12 +16,29 @@ import { NUMBER_WORDS } from './numbers.js'
 import { isArabicLetter, stripHarakat } from './arabic.js'
 import { readWord } from './transliterate.js'
 
+/**
+ * 찾을 때 쓰는 열쇠.
+ *
+ * 부호를 떼는 것만으로는 모자란다. 아랍어 자판과 붙여넣은 글은 함자를 흔히
+ * 흘려 쓴다 — أَيْنَ 를 اين 으로, سُؤَال 을 سوال 로 친다. 받침대만 남기고
+ * 함자를 지워 맞춰 두면 그렇게 친 글도 찾힌다. 읽어 줄 때는 사전에 든
+ * 원래 표기를 쓰므로, 화면에는 함자가 제대로 붙어 나온다.
+ */
+function key(word) {
+  return stripHarakat(word || '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+}
+
 function buildIndex() {
   const index = new Map() // 뼈대 → [{ a, k, r, m }]
 
   const add = (a, k, r, m) => {
     if (!a) return
-    const bare = stripHarakat(a)
+    const bare = key(a)
     // 부호가 하나도 없는 것은 색인에 넣어 봐야 소용이 없다
     if (!bare || bare === a) return
     if (!index.has(bare)) index.set(bare, [])
@@ -53,7 +70,7 @@ export function size() {
  * @returns {{a: string, k: string, r: string, m: string}[]} 없으면 빈 배열
  */
 export function lookup(word) {
-  return INDEX.get(stripHarakat(word || '')) || []
+  return INDEX.get(key(word)) || []
 }
 
 /** 이 낱말에 부호가 하나라도 붙어 있는가 */
