@@ -11,6 +11,7 @@ export default function FontPicker({ font, onChange }) {
           type="button"
           className={`fonts__btn${font === name ? ' is-active' : ''}`}
           aria-pressed={font === name}
+          aria-label={label}
           title={hint}
           onClick={() => onChange(name)}
         >

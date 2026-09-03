@@ -18,25 +18,27 @@ export default function App() {
     <div className="app">
       <header className="header">
         <h1 className="header__title">아랍어 읽기</h1>
-        <nav className="tabs" aria-label="페이지">
-          {ROUTES.map((tab) => (
-            <button
-              key={tab.path}
-              type="button"
-              className={`tab${tab.path === active.path ? ' is-active' : ''}`}
-              aria-current={tab.path === active.path ? 'page' : undefined}
-              onClick={() => go(tab.path)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+
+        {/* 탭과 글꼴이 한 줄을 나눠 쓴다. 밑줄은 줄 전체가 그린다. */}
+        <div className="navrow">
+          <nav className="tabs" aria-label="페이지">
+            {ROUTES.map((tab) => (
+              <button
+                key={tab.path}
+                type="button"
+                className={`tab${tab.path === active.path ? ' is-active' : ''}`}
+                aria-current={tab.path === active.path ? 'page' : undefined}
+                onClick={() => go(tab.path)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+          <FontPicker font={font} onChange={setFont} />
+        </div>
       </header>
 
-      <div className="subhead">
-        <p className="header__sub">{active.hint}</p>
-        <FontPicker font={font} onChange={setFont} />
-      </div>
+      <p className="header__sub">{active.hint}</p>
 
       {active.path === 'letters' && <LettersPage />}
       {active.path === 'numbers' && <NumbersPage />}
