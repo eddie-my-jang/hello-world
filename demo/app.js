@@ -967,7 +967,7 @@
      ═══════════════════════════════════════════════════════════════════════ */
   var fonts = (function () {
     var KEY = 'arabic-reader.font';
-    var BUTTONS = { naskh: 'fontNaskh', sans: 'fontSans' };
+    var BUTTONS = { naskh: 'fontNaskh', kufi: 'fontKufi' };
 
     function apply(name) {
       var font = BUTTONS[name] ? name : 'naskh';
@@ -983,7 +983,7 @@
     function init() {
       var saved = null;
       try { saved = window.localStorage.getItem(KEY); } catch (e) { /* 사생활 보호 창 */ }
-      apply(saved);
+      apply(saved === 'sans' ? 'kufi' : saved); // 표지판체가 잠깐 'sans' 이던 때가 있다
       Object.keys(BUTTONS).forEach(function (key) {
         $(BUTTONS[key]).addEventListener('click', function () { apply(key); });
       });
