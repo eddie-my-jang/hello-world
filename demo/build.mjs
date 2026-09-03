@@ -87,6 +87,22 @@ function inlineSpeech(source) {
   return `(function () {\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
 }
 
+// 결합표도 그대로 넣는다. readWord 는 위 엔진에 이미 있다.
+function inlineSyllables(source) {
+  const api = ['syllablesFor', 'syllablesOfExtra', 'allPieces']
+  for (const name of api) {
+    if (!source.includes(`export function ${name}`)) {
+      throw new Error(`syllables.js 에 ${name} 이 없습니다`)
+    }
+  }
+  for (const name of importedNames(source)) {
+    if (name !== 'readWord') {
+      throw new Error(`syllables.js 가 새로 가져오는 ${name} 을 데모에서 이어 주지 않았습니다`)
+    }
+  }
+  return `(function () {\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
+}
+
 // 사전도 그대로 넣는다. 데모에서는 예문이 DECKS, 모음 부호가 VOWEL_MARKS 라는
 // 이름이라 앞머리에서 맞춰 준다.
 function inlineDictionary(source) {
@@ -117,13 +133,14 @@ function inlineDictionary(source) {
   return `(function () {\n${head}\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
 }
 
-const [template, appJs, styles, engine, speech, dictionary] = await Promise.all([
+const [template, appJs, styles, engine, speech, dictionary, syllables] = await Promise.all([
   read('demo/template.html'),
   read('demo/app.js'),
   read('src/styles.css'),
   read('src/lib/transliterate.js'),
   read('src/lib/speech.js'),
   read('src/lib/dictionary.js'),
+  read('src/lib/syllables.js'),
 ])
 
 const page = template
@@ -132,7 +149,8 @@ const page = template
   .replace('/*__APP_JS__*/', () => appJs
     .replace('/*__TRANSLITERATE__*/', () => inlineModule(engine))
     .replace('/*__SPEECH__*/ {}', () => inlineSpeech(speech))
-    .replace('/*__DICTIONARY__*/ {}', () => inlineDictionary(dictionary)))
+    .replace('/*__DICTIONARY__*/ {}', () => inlineDictionary(dictionary))
+    .replace('/*__SYLLABLES__*/ {}', () => inlineSyllables(syllables)))
 
 const leftover = page.match(/\/\*__[A-Z_]+__\*\//g)
 if (leftover) throw new Error(`치환되지 않은 자리가 있습니다: ${leftover.join(', ')}`)

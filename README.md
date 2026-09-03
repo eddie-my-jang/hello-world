@@ -9,7 +9,7 @@
 | 경로 | 페이지 | 하는 일 |
 | --- | --- | --- |
 | `#/` | 읽기판 | 사진 속 단어를 오른쪽부터 한 글자씩 짚어 가며 읽습니다 |
-| `#/letters` | 자모표 | 자음 28자와 모음 부호를 눌러서 찾아봅니다 |
+| `#/letters` | 자모표 | 자음 28자와 모음 부호, 자음마다 부호를 붙인 결합표 |
 | `#/numbers` | 숫자 | 낱개부터 천의 자리까지, 자리를 이어 붙이는 법까지 |
 
 Vite + React, 상태 관리는 `useState` 만. 라우팅은 `src/lib/router.js` 의 해시 라우터
@@ -223,6 +223,7 @@ src/
   lib/speech.js          Web Speech API (ar-SA) — 낱말·글자 듣기
   lib/samples.js         읽기판 예시 (손으로 적은 것 + numbers.js 가 만든 숫자)
   lib/letters.js         자모표 데이터 (자음 28자, 부호, 장모음, 그밖의 글자)
+  lib/syllables.js       자음+부호 결합표 (한글·로마자는 엔진이 만든다)
   lib/numbers.js         숫자 데이터 (낱개·십·백·천, 자리 이름, 이어 붙이기)
   pages/
     ReaderPage.jsx       읽기판
@@ -239,7 +240,8 @@ src/
     FontPicker.jsx       아랍어 글꼴 고르기
     DictPicks.jsx        읽기가 갈리는 낱말 고르기
     LetterTile.jsx       자모표 격자 한 칸
-    LetterDetail.jsx     펼친 글자 — 네 모양 + 부호별 발음
+    LetterDetail.jsx     펼친 글자 — 네 모양 + 결합표
+    SyllableTable.jsx    결합한 글자의 발음 칸들
     ItemCard.jsx         부호·장모음·그밖의 글자 줄 카드
   styles.css             팔레트와 폰트를 참조하는 유일한 파일
 public/                  manifest·서비스 워커·아이콘 (아래 「홈 화면에 추가」 참고)
@@ -249,6 +251,7 @@ test/samples.test.js     예시 단어 무결성 테스트
 test/transliterate.test.js  발음 옮기기 테스트
 test/dictionary.test.js  사전 찾기 테스트
 test/font.test.js        글꼴 고르기 테스트
+test/syllables.test.js   결합표 무결성 테스트
 test/numbers.test.js     숫자 데이터 무결성 테스트
 test/speech.test.js      음성 고르기 테스트
 ```
@@ -305,7 +308,8 @@ Web Speech API 를 씁니다. 서버도 키도 필요 없고 오프라인에서�
 글자를 골랐으면 낱말이나 문장은 읽지 않습니다. 그 반대도 마찬가지입니다.
 발음 단위를 **끄기**로 두면 재생 중에는 아무것도 읽지 않고, 🔊 듣기 버튼만 동작합니다.
 
-자모표에서는 부호 칸을 눌러 `بَ` `بِ` `بُ` `بْ` 를 각각, 예시 낱말을 눌러 그 낱말을 듣습니다.
+자모표에서는 결합표의 칸을 눌러 `بَ` `بِي` `بَيْ` `بً` `بَّ` 같은 짝을 하나씩, 예시 낱말을 눌러
+그 낱말을 듣습니다.
 숫자 페이지에서는 줄을 통째로 눌러 그 숫자를 듣습니다.
 
 **음성 목록으로 버튼을 숨기지 않습니다.** 예전에는 `getVoices()` 에 아랍어 음성이

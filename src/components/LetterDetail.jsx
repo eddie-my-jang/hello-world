@@ -1,5 +1,7 @@
 import { letterConnectsForward, letterForms } from '../lib/arabic.js'
 import { isSupported as canSpeak, speak } from '../lib/speech.js'
+import { syllablesFor } from '../lib/syllables.js'
+import SyllableTable from './SyllableTable.jsx'
 
 const FORM_LABELS = [
   ['alone', '홀로'],
@@ -8,18 +10,11 @@ const FORM_LABELS = [
   ['fin', '끝'],
 ]
 
-// 파트하 / 카스라 / 담마 / 수쿤
-const MARK_LABELS = [
-  ['َ', '파트하'],
-  ['ِ', '카스라'],
-  ['ُ', '담마'],
-  ['ْ', '수쿤'],
-]
-
-/** 격자에서 펼쳐지는 글자 상세 — 네 가지 모양과 부호별 발음 */
+/** 격자에서 펼쳐지는 글자 상세 — 네 가지 모양과, 부호가 붙은 모든 짝의 발음 */
 export default function LetterDetail({ letter }) {
   const forms = letterForms(letter.a)
   const speakable = canSpeak()
+  const syllables = syllablesFor(letter.a)
 
   return (
     <div className="detail">
@@ -49,34 +44,7 @@ export default function LetterDetail({ letter }) {
         </p>
       )}
 
-      {letter.reads && (
-        <div className="reads">
-          {MARK_LABELS.map(([mark, label], i) => {
-            const syllable = letter.a + mark
-            const body = (
-              <>
-                <div className="read__mark" lang="ar">{syllable}</div>
-                <div className="read__ko">{letter.reads[i]}</div>
-                <div className="read__name">{label}</div>
-              </>
-            )
-            // 소리를 낼 수 있으면 눌러서 듣게 한다
-            return speakable ? (
-              <button
-                type="button"
-                className="read read--tap"
-                key={label}
-                onClick={() => speak(syllable, { rate: 0.7 })}
-                title={`${syllable} 듣기`}
-              >
-                {body}
-              </button>
-            ) : (
-              <div className="read" key={label}>{body}</div>
-            )
-          })}
-        </div>
-      )}
+      <SyllableTable groups={syllables} />
 
       {letter.note && <p className="detail__note">{letter.note}</p>}
 

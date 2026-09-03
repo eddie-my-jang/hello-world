@@ -92,6 +92,12 @@
      ═══════════════════════════════════════════════════════════════════════ */
   var Dict = /*__DICTIONARY__*/ {};
 
+  /* ═══ 결합표 ══════════════════════════════════════════════════════════════
+     build.mjs 가 src/lib/syllables.js 를 여기에 넣는다. 자음에 부호를 붙인
+     짝의 한글·로마자를 위 엔진에서 그대로 만들어 낸다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var Syllables = /*__SYLLABLES__*/ {};
+
   function $(id) { return document.getElementById(id); }
 
   /* ═══ 읽기판 ══════════════════════════════════════════════════════════════ */
@@ -613,7 +619,6 @@
       shape: '뼈대가 같아 점으로만 갈라지는 글자끼리 묶었습니다. 초심자가 실제로 헷갈리는 지점은 순서가 아니라 여기입니다.'
     };
     var FORM_LABELS = [['alone', '홀로'], ['init', '첫'], ['mid', '가운데'], ['fin', '끝']];
-    var MARK_LABELS = [['َ', '파트하'], ['ِ', '카스라'], ['ُ', '담마'], ['ْ', '수쿤']];
 
     function byChar(ch) {
       for (var i = 0; i < LETTERS.length; i++) if (LETTERS[i].a === ch) return LETTERS[i];
@@ -640,6 +645,45 @@
         render();
       });
       return b;
+    }
+
+    /** 결합한 글자 한 칸. SyllableTable.jsx 와 같은 모양이다. */
+    function syllableCell(cell) {
+      var speakable = Speech.isSupported();
+      var box = document.createElement(speakable ? 'button' : 'div');
+      box.className = 'read' + (speakable ? ' read--tap' : '');
+      if (speakable) {
+        box.type = 'button';
+        box.title = cell.a + ' 듣기';
+        box.addEventListener('click', function () { Speech.speak(cell.a, { rate: 0.7 }); });
+      }
+      box.innerHTML = '<div class="read__mark" lang="ar" dir="rtl"></div><div class="read__ko"></div>'
+        + '<div class="read__ro"></div><div class="read__name"></div>';
+      box.querySelector('.read__mark').textContent = cell.a;
+      box.querySelector('.read__ko').textContent = cell.k;
+      box.querySelector('.read__ro').textContent = cell.r;
+      box.querySelector('.read__name').textContent = cell.name;
+      return box;
+    }
+
+    /** 이름표를 단 여러 묶음으로 그린다 */
+    function syllableTable(groups) {
+      var wrap = document.createElement('div');
+      wrap.className = 'syls';
+      groups.forEach(function (group) {
+        var block = document.createElement('div');
+        block.className = 'syl';
+        var label = document.createElement('div');
+        label.className = 'syl__label';
+        label.textContent = group.group;
+        block.appendChild(label);
+        var row = document.createElement('div');
+        row.className = 'reads';
+        group.cells.forEach(function (cell) { row.appendChild(syllableCell(cell)); });
+        block.appendChild(row);
+        wrap.appendChild(block);
+      });
+      return wrap;
     }
 
     function detail(letter) {
@@ -680,28 +724,7 @@
         box.appendChild(stopNote);
       }
 
-      if (letter.reads) {
-        var speakable = Speech.isSupported();
-        var readRow = document.createElement('div');
-        readRow.className = 'reads';
-        MARK_LABELS.forEach(function (pair, i) {
-          var syllable = letter.a + pair[0];
-          // 소리를 낼 수 있으면 눌러서 듣게 한다
-          var cell = document.createElement(speakable ? 'button' : 'div');
-          cell.className = 'read' + (speakable ? ' read--tap' : '');
-          if (speakable) {
-            cell.type = 'button';
-            cell.title = syllable + ' 듣기';
-            cell.addEventListener('click', function () { Speech.speak(syllable, { rate: 0.7 }); });
-          }
-          cell.innerHTML = '<div class="read__mark" lang="ar"></div><div class="read__ko"></div><div class="read__name"></div>';
-          cell.querySelector('.read__mark').textContent = syllable;
-          cell.querySelector('.read__ko').textContent = letter.reads[i];
-          cell.querySelector('.read__name').textContent = pair[1];
-          readRow.appendChild(cell);
-        });
-        box.appendChild(readRow);
-      }
+      box.appendChild(syllableTable(Syllables.syllablesFor(letter.a)));
 
       if (letter.note) {
         var note = document.createElement('p');
@@ -824,6 +847,7 @@
         body.appendChild(note);
       }
 
+      if (opts.more) body.appendChild(opts.more);
       box.appendChild(body);
       return box;
     }
@@ -842,9 +866,14 @@
         }));
       });
       EXTRAS.forEach(function (row) {
+        var cells = Syllables.syllablesOfExtra(row.a);
+        var extra = document.createElement('div');
+        extra.className = 'reads';
+        cells.forEach(function (cell) { extra.appendChild(syllableCell(cell)); });
         $('extras').appendChild(item({
           glyph: row.a, ink: true, wide: row.wide,
-          name: row.name, ex: row.ex, note: row.note
+          name: row.name, ex: row.ex, note: row.note,
+          more: cells.length ? extra : null
         }));
       });
     }
