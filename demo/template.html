@@ -87,6 +87,11 @@ kbd {
     <section class="panel">
       <span class="editor__label">예문</span>
       <div class="segmented" id="kinds" role="group" aria-label="예문 갈래"></div>
+      <div class="find">
+        <input type="search" class="find__input" id="find" placeholder="찾기 — 뜻이나 아랍어로" aria-label="예문 찾기">
+        <span class="find__count" id="findCount"></span>
+      </div>
+      <p class="status" id="noHit" hidden>찾는 낱말이 없습니다. 아래 「직접 입력」에 붙여넣어 보세요.</p>
       <div class="decks" id="decks"></div>
     </section>
 
