@@ -4,11 +4,14 @@
    --f-* 값만 바꾸면 된다. 다른 파일은 손댈 필요가 없다.
 
    아랍어는 두 벌을 싣는다. 같은 글자도 글꼴에 따라 아주 달라 보이기 때문이다 —
-   필사체(Naskh)는 붓으로 쓴 곡선이라 교재와 꾸란이 쓰고, 표지판체(Sans)는
-   획을 곧게 편 것이라 공항·간판·자막이 쓴다. 초심자가 교재로 익힌 글자를
-   길에서 못 알아보는 일이 흔해서, 눌러서 바꿔 볼 수 있게 두 벌 다 싣는다.
+   필사체(Naskh)는 붓으로 쓴 곡선이라 교재와 꾸란이 쓰고, 표지판체(Kufi)는
+   자를 대고 그은 듯한 기하학적 획이라 공항 표지판과 책 표지가 쓴다.
+   초심자가 교재로 익힌 글자를 길에서 못 알아보는 일이 흔해서, 눌러서 바꿔 볼 수 있게
+   두 벌 다 싣는다. 쿠피는 곡선을 펴는 정도가 아니라 뼈대 자체를 다시 그린 글꼴이라
+   두 벌의 차이가 한눈에 든다 — 산세리프 계열(Noto Sans Arabic 등)은 나스흐와
+   뼈대가 같아 나란히 놓아도 구별되지 않는다.
    ───────────────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;700&family=Noto+Kufi+Arabic:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap');
 
 /* ─────────────────────────────────────────────────────────────────────────────
    팔레트는 필사본 안료에서 가져왔다.
@@ -36,7 +39,7 @@
   --go-fg: #FBF7F2;
 
   --f-ar-naskh: 'Noto Naskh Arabic', 'Times New Roman', serif;
-  --f-ar-sans: 'Noto Sans Arabic', 'Segoe UI', sans-serif;
+  --f-ar-kufi: 'Noto Kufi Arabic', 'Segoe UI', sans-serif;
   --f-ar: var(--f-ar-naskh);
   --f-display: 'Nanum Myeongjo', Georgia, serif;
   --f-ui: 'IBM Plex Sans KR', system-ui, -apple-system, sans-serif;
@@ -64,7 +67,7 @@
 }
 
 /* 고른 글꼴. 값 하나만 갈아 끼우면 --f-ar 를 쓰는 스물몇 자리가 다 따라온다. */
-:root[data-font='sans'] { --f-ar: var(--f-ar-sans); }
+:root[data-font='kufi'] { --f-ar: var(--f-ar-kufi); }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
