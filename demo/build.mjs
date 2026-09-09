@@ -99,6 +99,15 @@ function inlinePolish(source) {
   return `(function () {\n${inlineModule(source)}\n  return { polish, roman };\n})()`
 }
 
+// 접사 떼기도 그대로 넣는다. 아무것도 가져오지 않는 모듈이라 앞머리가 필요 없다.
+function inlineAffix(source) {
+  if (!source.includes('export function segmentations')) {
+    throw new Error('affix.js 에 segmentations 가 없습니다')
+  }
+  if (importedNames(source).length) throw new Error('affix.js 가 무언가를 가져오게 되었습니다')
+  return `(function () {\n${inlineModule(source)}\n  return { segmentations };\n})()`
+}
+
 // 결합표도 그대로 넣는다. readWord 는 위 엔진에 이미 있다.
 function inlineSyllables(source) {
   const api = ['syllablesFor', 'syllablesOfExtra', 'allPieces']
@@ -132,6 +141,7 @@ function inlineDictionary(source) {
     NUMBER_WORDS: 'NUMBERS.WORDS',
     polish: 'Polish.polish',
     roman: 'Polish.roman',
+    segmentations: 'Affix.segmentations',
     // 아래 것들은 app.js 에 이미 같은 이름으로 있다
     LETTERS: null, LONGS: null, LEXICON: null,
     isArabicLetter: null, stripHarakat: null, readWord: null,
@@ -148,7 +158,7 @@ function inlineDictionary(source) {
   return `(function () {\n${head}\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
 }
 
-const [template, appJs, styles, engine, speech, dictionary, syllables, polishSrc] = await Promise.all([
+const [template, appJs, styles, engine, speech, dictionary, syllables, polishSrc, affixSrc] = await Promise.all([
   read('demo/template.html'),
   read('demo/app.js'),
   read('src/styles.css'),
@@ -157,6 +167,7 @@ const [template, appJs, styles, engine, speech, dictionary, syllables, polishSrc
   read('src/lib/dictionary.js'),
   read('src/lib/syllables.js'),
   read('src/lib/polish.js'),
+  read('src/lib/affix.js'),
 ])
 
 const page = template
@@ -167,7 +178,8 @@ const page = template
     .replace('/*__SPEECH__*/ {}', () => inlineSpeech(speech))
     .replace('/*__DICTIONARY__*/ {}', () => inlineDictionary(dictionary))
     .replace('/*__SYLLABLES__*/ {}', () => inlineSyllables(syllables))
-    .replace('/*__POLISH__*/ {}', () => inlinePolish(polishSrc)))
+    .replace('/*__POLISH__*/ {}', () => inlinePolish(polishSrc))
+    .replace('/*__AFFIX__*/ {}', () => inlineAffix(affixSrc)))
 
 const leftover = page.match(/\/\*__[A-Z_]+__\*\//g)
 if (leftover) throw new Error(`치환되지 않은 자리가 있습니다: ${leftover.join(', ')}`)
