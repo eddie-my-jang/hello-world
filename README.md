@@ -74,9 +74,12 @@ alif/waw/ya 는 앞 모음을 보고 장모음인지 이중모음인지 가릅�
 `اين` 으로, `سُؤَال` 을 `سوال` 로 적는 일이 흔해서, 받침대만 남기고 색인을 만들어 둡니다.
 읽어 줄 때는 사전에 든 원래 표기를 쓰므로 화면에는 함자가 제대로 붙어 나옵니다.
 
-1. **앱이 아는 낱말에서 찾습니다** (`src/lib/dictionary.js`). 예문과 자모표 예시에 이미
-   부호가 붙은 낱말이 185개 들어 있어, 부호를 뗀 모양으로 색인을 만들어 둡니다.
-   `السلام عليكم` 를 그냥 치면 `اَلسَّلَامُ عَلَيْكُمْ` 로 채워집니다.
+1. **앱이 아는 낱말에서 찾습니다** (`src/lib/dictionary.js`). 예문·자모표 예시에 손으로
+   적은 낱말과, 공개 말뭉치(Tashkeela, MIT)에서 뽑은 2만 개가 함께 색인에 들어갑니다 —
+   뼈대 16,500개 · 낱말 20,000여 개. `السلام عليكم` 를 그냥 치면 `اَلسَّلَامُ عَلَيْكُمْ`
+   로 채워집니다. 손으로 적은 낱말에는 뜻이 붙어 있고 언제나 먼저 찾히며, 말뭉치
+   낱말은 뜻 없이 발음만 채웁니다 — `src/lib/lexicon.js`, `tools/build-lexicon.mjs` 로
+   다시 뽑을 수 있습니다.
 2. **읽기가 여럿이면 고르게 합니다.** `كتب` 는 `كَتَبَ`(그가 썼다)일 수도
    `كُتُب`(책들)일 수도 있습니다. 하나를 골라 지어내지 않고 후보를 보여 줍니다.
 3. **못 찾으면 모른다고 남깁니다.** 부호 없는 가운데 글자는 초성 하나만 나옵니다
@@ -85,6 +88,11 @@ alif/waw/ya 는 앞 모음을 보고 장모음인지 이중모음인지 가릅�
 편집창의 **부호 붙이기** 단추로 직접 붙일 수도 있습니다. 커서 자리에 끼워 넣으므로
 글자를 치고 바로 부호를 누르면 됩니다. 자모표에서 배운 것을 그대로 써먹는 자리이자,
 서버 없이 확실하게 읽히게 만드는 방법입니다.
+
+말뭉치 낱말은 글자별 발음을 그대로 이어 붙이면 「비느트」처럼 부자연스럽습니다.
+`src/lib/polish.js` 가 손으로 적은 예문의 표기 관례(수쿤 자음은 받침으로, 정관사의
+`ل` 도 받침으로, 겹자음은 앞 반쪽을 받침으로 …)를 규칙으로 옮겨 다듬습니다 —
+손으로 적은 낱말의 93%를 그대로 재현하는 것으로 확인했습니다(`test/polish.test.js`).
 
 문맥까지 읽어 채우는 것은 여전히 `/api/read` 의 몫입니다 — 사전은 앱이 아는 낱말만
 압니다.
@@ -211,6 +219,7 @@ grep -ri "anthropic\|sk-ant" dist/     # 아무것도 나오지 않아야 정상
 ```
 api/read.js              서버리스 프록시 — 키를 쥐고 Claude 를 호출하는 유일한 곳
 vite.config.js           개발 서버에서 /api/read 를 같은 파일로 띄우는 미들웨어
+tools/build-lexicon.mjs  Tashkeela 말뭉치에서 lib/lexicon.js 를 뽑아내는 일회성 스크립트
 src/
   App.jsx                셸 — 탭과 라우팅
   lib/router.js          해시 라우터
@@ -218,6 +227,8 @@ src/
   lib/arabic.js          ZWJ 결합 처리, 글자 모양 생성, 하라카트 제거, 글자 분해
   lib/transliterate.js   붙어 있는 부호대로 한글·로마자로 옮기기 (서버 없이)
   lib/dictionary.js      부호 없이 입력한 글을 앱이 아는 낱말에서 찾기
+  lib/lexicon.js         말뭉치에서 뽑은 낱말 2만 개 (tools/build-lexicon.mjs 가 만든다)
+  lib/polish.js          글자별 발음을 낱말 수준으로 다듬기 (비느트 → 빈트)
   lib/api.js             /api/read 호출, JSON 파싱(코드펜스 제거 방어)
   lib/image.js           업로드 전 canvas 축소 (최대 1000px, JPEG 0.8)
   lib/speech.js          Web Speech API (ar-SA) — 낱말·글자 듣기
@@ -250,6 +261,8 @@ test/letters.test.js     자모표 데이터 무결성 테스트
 test/samples.test.js     예시 단어 무결성 테스트
 test/transliterate.test.js  발음 옮기기 테스트
 test/dictionary.test.js  사전 찾기 테스트
+test/lexicon.test.js     말뭉치 낱말 무결성 테스트
+test/polish.test.js      낱말 다듬기 테스트
 test/font.test.js        글꼴 고르기 테스트
 test/syllables.test.js   결합표 무결성 테스트
 test/numbers.test.js     숫자 데이터 무결성 테스트
