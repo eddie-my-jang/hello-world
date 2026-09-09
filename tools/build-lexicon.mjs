@@ -21,6 +21,14 @@ const CASE_MARK = /[ًٌٍَُِ]/
 const FATHA = 'َ'
 const SUKUN = 'ْ'
 
+// 소유 어미 ـه(그의)·ـك(너의)가 붙은 낱말은 끝이 「부호 + ه/ك + 부호」꼴이다
+// (بَيْتِكَ 「너의 집」). 이 마지막 부호는 격어미가 아니라 어미 자신의 모음이라
+// 떼면 안 된다 — 떼면 «بَيْتِك» 처럼 앞뒤가 안 맞는 반쪽짜리가 남는다.
+// (드물게 뿌리글자 자체가 ه/ك 로 끝나는 낱말 — «مَلِكٌ» 임금 — 도 이 모양에
+// 걸려 격어미가 안 떨어질 수 있다. 그런 낱말은 격어미가 붙은 채로 사전에
+// 남을 뿐이니, 부호를 뗀 뼈대로 찾는 사전 색인에는 지장이 없다.)
+const ATTACHED_PRONOUN = /[ًٌٍَُِ][هك][ًٌٍَُِ]$/
+
 /**
  * 낱말 끝의 격어미를 떼어 표제형으로 되돌린다.
  *
@@ -31,8 +39,9 @@ const SUKUN = 'ْ'
  * 다만 과거 동사의 끝 파트하는 격어미가 아니라 낱말의 일부다 (كَتَبَ 카타바).
  * 짧고 · 수쿤이 없고 · 파트하로 끝나면 동사로 보고 그대로 둔다.
  */
-function toCitation(word) {
+export function toCitation(word) {
   let w = word
+  if (ATTACHED_PRONOUN.test(w)) return w // 이미 온전한 형태 — 손대지 않는다
   // 끝에 겹쳐 붙은 부호를 훑는다 (샷다+탄윈 차례가 뒤집힌 것도 있다)
   while (w.length > 1 && CASE_MARK.test(w[w.length - 1])) {
     const last = w[w.length - 1]
@@ -51,7 +60,7 @@ function toCitation(word) {
  * 정관사가 관건이다. 말뭉치는 `الْكِتَاب` 처럼 알리프에 부호를 안 찍는데,
  * 그러면 엔진이 첫 글자를 못 읽는다(물음표). 앱은 `اَلْكِتَاب` 로 적는다.
  */
-function normalize(raw) {
+export function normalize(raw) {
   let w = raw.normalize('NFC').replace(/ـ/g, '') // 타트윌(늘임표) 제거
   if (!w || !ARABIC_ONLY.test(w)) return null
   w = toCitation(w)
@@ -66,48 +75,53 @@ function normalize(raw) {
   return w
 }
 
-const [file, limitArg] = process.argv.slice(2)
-if (!file) {
-  console.error('쓰임: node tools/build-lexicon.mjs <말뭉치.txt> [개수]')
-  process.exit(1)
-}
-const LIMIT = Number(limitArg) || 20000
+// 직접 실행했을 때만 돈다 — test/build-lexicon.test.js 가 toCitation·normalize
+// 만 떼어 가져다 쓸 때는 이 아래가 돌면 안 된다(말뭉치 파일부터 요구한다).
+const isMain = process.argv[1] && import.meta.url === new URL(process.argv[1], 'file:').href
 
-const freq = new Map()
-let seen = 0
-for (const line of readFileSync(file, 'utf8').split('\n')) {
-  for (const rawToken of line.split(/\s+/)) {
-    const token = rawToken.replace(/^[^ء-ي]+|[^ء-ْٰ]+$/g, '')
-    if (!token || !MARK.test(token)) continue
-    seen += 1
-    const w = normalize(token)
-    if (!w) continue
-    freq.set(w, (freq.get(w) || 0) + 1)
+if (isMain) {
+  const [file, limitArg] = process.argv.slice(2)
+  if (!file) {
+    console.error('쓰임: node tools/build-lexicon.mjs <말뭉치.txt> [개수]')
+    process.exit(1)
   }
-}
+  const LIMIT = Number(limitArg) || 20000
 
-// 품질 관문 — 엔진이 온전히 읽어 내지 못하는 것은 사전에 넣어 봐야 물음표만 는다
-const readable = []
-for (const [w, count] of freq) {
-  if (stripHarakat(w).length < 2) continue
-  if (readWord(w).unknown === 0) readable.push([w, count])
-}
-readable.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  const freq = new Map()
+  let seen = 0
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    for (const rawToken of line.split(/\s+/)) {
+      const token = rawToken.replace(/^[^ء-ي]+|[^ء-ْٰ]+$/g, '')
+      if (!token || !MARK.test(token)) continue
+      seen += 1
+      const w = normalize(token)
+      if (!w) continue
+      freq.set(w, (freq.get(w) || 0) + 1)
+    }
+  }
 
-// 뼈대 하나에 너무 많은 후보가 붙으면 고르기 화면이 못 쓰게 된다
-const PER_SKELETON = 3
-const perBare = new Map()
-const kept = []
-for (const [w, count] of readable) {
-  const bare = stripHarakat(w)
-  const n = perBare.get(bare) || 0
-  if (n >= PER_SKELETON) continue
-  perBare.set(bare, n + 1)
-  kept.push(w)
-  if (kept.length >= LIMIT) break
-}
+  // 품질 관문 — 엔진이 온전히 읽어 내지 못하는 것은 사전에 넣어 봐야 물음표만 는다
+  const readable = []
+  for (const [w, count] of freq) {
+    if (stripHarakat(w).length < 2) continue
+    if (readWord(w).unknown === 0) readable.push([w, count])
+  }
+  readable.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
 
-const out = `// 말뭉치에서 뽑은 낱말 목록. 손으로 고치지 말 것 —
+  // 뼈대 하나에 너무 많은 후보가 붙으면 고르기 화면이 못 쓰게 된다
+  const PER_SKELETON = 3
+  const perBare = new Map()
+  const kept = []
+  for (const [w, count] of readable) {
+    const bare = stripHarakat(w)
+    const n = perBare.get(bare) || 0
+    if (n >= PER_SKELETON) continue
+    perBare.set(bare, n + 1)
+    kept.push(w)
+    if (kept.length >= LIMIT) break
+  }
+
+  const out = `// 말뭉치에서 뽑은 낱말 목록. 손으로 고치지 말 것 —
 // tools/build-lexicon.mjs 가 만든다 (Tashkeela 벤치마크, MIT).
 //
 // 잦은 것부터 ${kept.length}개. 부호는 앱 표기에 맞췄고, 읽기 엔진이
@@ -116,9 +130,10 @@ const out = `// 말뭉치에서 뽑은 낱말 목록. 손으로 고치지 말 �
 
 export const LEXICON = ${JSON.stringify(kept)}
 `
-writeFileSync(new URL('../src/lib/lexicon.js', import.meta.url), out, 'utf8')
+  writeFileSync(new URL('../src/lib/lexicon.js', import.meta.url), out, 'utf8')
 
-console.log(`훑은 낱말 ${seen.toLocaleString()}개 · 서로 다른 꼴 ${freq.size.toLocaleString()}`)
-console.log(`엔진이 읽어 냄 ${readable.length.toLocaleString()} (${((readable.length / freq.size) * 100).toFixed(0)}%)`)
-console.log(`남긴 것 ${kept.length.toLocaleString()} · 뼈대 ${perBare.size.toLocaleString()}`)
-console.log(`src/lib/lexicon.js ${(out.length / 1024).toFixed(0)}KB`)
+  console.log(`훑은 낱말 ${seen.toLocaleString()}개 · 서로 다른 꼴 ${freq.size.toLocaleString()}`)
+  console.log(`엔진이 읽어 냄 ${readable.length.toLocaleString()} (${((readable.length / freq.size) * 100).toFixed(0)}%)`)
+  console.log(`남긴 것 ${kept.length.toLocaleString()} · 뼈대 ${perBare.size.toLocaleString()}`)
+  console.log(`src/lib/lexicon.js ${(out.length / 1024).toFixed(0)}KB`)
+}

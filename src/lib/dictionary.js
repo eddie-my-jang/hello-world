@@ -17,6 +17,7 @@ import { isArabicLetter, stripHarakat } from './arabic.js'
 import { readWord } from './transliterate.js'
 import { polish, roman } from './polish.js'
 import { LEXICON } from './lexicon.js'
+import { segmentations } from './affix.js'
 
 /**
  * 찾을 때 쓰는 열쇠.
@@ -94,11 +95,56 @@ export function size() {
 }
 
 /**
- * 부호를 뗀 모양으로 찾는다.
+ * 접사를 뗀 줄기로 찾는다. lookup() 이 직접 찾기에 실패했을 때만 부른다.
+ *
+ * segmentations() 가 내놓는 단(tier)을 순서대로 훑다가, 한 단에서 사전에
+ * 걸리는 것이 나오면 거기서 멈춘다 — 「가장 많이 뗀 조합」과 「그보다 적게
+ * 떼도 되는 조합」이 동시에 맞을 때, 더 많이 뗀 쪽(대개 더 정확한 분석)을
+ * 우선한다.
+ */
+/**
+ * 줄기를 색인에서 찾는다. ة 로 끝나는 낱말은 색인에 ه 로 들어 있는데
+ * (key() 가 그렇게 바꾼다), 소유 어미를 붙이며 ة 가 ت 로 바뀐 자리이므로
+ * 뗀 줄기는 …ت 꼴이다. ت 를 ه 로 되돌린 자리도 함께 찾아야 «مَدْرَسَة»
+ * 가 잡힌다.
+ */
+function stemHits(stem) {
+  const direct = index().get(stem) || []
+  if (!stem.endsWith('ت')) return direct
+  const viaTa = index().get(`${stem.slice(0, -1)}ه`) || []
+  return direct.concat(viaTa)
+}
+
+function lookupAffixed(bare) {
+  for (const tier of segmentations(bare)) {
+    const found = []
+    const seen = new Set()
+    for (const seg of tier) {
+      for (const entry of stemHits(seg.stem)) {
+        const a = seg.apply(entry.a)
+        if (seen.has(a)) continue
+        // 재조립한 것이 엔진으로 안 읽히면(드물게 부호가 서로 안 맞는 조합)
+        // 후보에서 뺀다 — 지어낸 발음을 보여줄 수는 없다.
+        const built = readWord(a)
+        if (built.unknown) continue
+        seen.add(a)
+        found.push({ a, k: polish(built.l), r: roman(built.r), m: entry.m || '' })
+      }
+    }
+    if (found.length) return found
+  }
+  return []
+}
+
+/**
+ * 부호를 뗀 모양으로 찾는다. 그대로 찾히지 않으면 접사를 떼고 다시 찾는다
+ * (اَلْكِتَاب 처럼 정관사·전치사·소유 어미가 붙은 꼴).
  * @returns {{a: string, k: string, r: string, m: string}[]} 없으면 빈 배열
  */
 export function lookup(word) {
-  return index().get(key(word)) || []
+  const bare = key(word)
+  const direct = index().get(bare) || []
+  return direct.length ? direct : lookupAffixed(bare)
 }
 
 /** 이 낱말에 부호가 하나라도 붙어 있는가 */
