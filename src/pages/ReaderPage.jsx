@@ -7,7 +7,7 @@ import Uploader from '../components/Uploader.jsx'
 import TextEditor from '../components/TextEditor.jsx'
 import SamplePicker from '../components/SamplePicker.jsx'
 import { readImage, readText } from '../lib/api.js'
-import { readTextSmart } from '../lib/dictionary.js'
+import { readTextSmart, warmUp } from '../lib/dictionary.js'
 import DictPicks from '../components/DictPicks.jsx'
 import { downscaleImage } from '../lib/image.js'
 import { isSilentPiece, isSupported as canSpeak, primeFromUserGesture, speak, stop as stopSpeech } from '../lib/speech.js'
@@ -29,6 +29,10 @@ export default function ReaderPage() {
   const [error, setError] = useState('')
   const [preview, setPreview] = useState(null)
   const speechAvailable = canSpeak()
+
+  // 사전 색인은 낱말 이만 개를 읽어 만들므로 몇백 ms 가 든다. 첫 글자를 칠 때
+  // 그 값을 치르면 손이 멈춘 것처럼 느껴지므로, 화면이 뜬 뒤 한가할 때 미리 만든다.
+  useEffect(() => warmUp(), [])
 
   const words = result.w
   const word = words[wordIndex] || null

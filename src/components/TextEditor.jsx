@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { countUnmarked } from '../lib/transliterate.js'
+import { readTextSmart } from '../lib/dictionary.js'
 import { stripHarakat } from '../lib/arabic.js'
 
 /**
@@ -44,7 +44,16 @@ export default function TextEditor({ value, onAnalyze, onReadLocal, busy }) {
   }
 
   const trimmed = text.trim()
-  const { unknown, total } = useMemo(() => countUnmarked(trimmed), [trimmed])
+  // 사전까지 거친 뒤에 남는 자리를 센다. 붙어 있는 부호만 세면 앱이 읽어 낼 수
+  // 있는 글에도 「모음을 알 수 없다」고 겁을 주게 된다.
+  const { unknown, total, found } = useMemo(() => {
+    const out = readTextSmart(trimmed)
+    return {
+      unknown: out.w.reduce((n, word) => n + (word.unknown || 0), 0),
+      total: out.w.reduce((n, word) => n + word.l.length, 0),
+      found: out.found,
+    }
+  }, [trimmed])
   const dirty = trimmed !== value.trim()
 
   return (
@@ -117,8 +126,10 @@ export default function TextEditor({ value, onAnalyze, onReadLocal, busy }) {
       {total > 0 && (
         <p className="editor__gauge">
           {unknown === 0
-            ? '부호가 다 붙어 있습니다. 서버 없이 바로 읽을 수 있습니다.'
-            : `모음을 알 수 없는 자리가 ${unknown}곳 있습니다 — 「하라카트 붙여 분석」이 문맥을 보고 채워 줍니다.`}
+            ? found
+              ? `${found}개는 앱이 아는 낱말에서 찾았습니다. 서버 없이 바로 읽을 수 있습니다.`
+              : '부호가 다 붙어 있습니다. 서버 없이 바로 읽을 수 있습니다.'
+            : `모음을 알 수 없는 자리가 ${unknown}곳 남았습니다 — 「하라카트 붙여 분석」이 문맥을 보고 채워 줍니다.`}
         </p>
       )}
     </form>

@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url'
 import { LETTERS, FAMILIES, MARKS, LONGS, EXTRAS } from '../src/lib/letters.js'
 import { SAMPLES } from '../src/lib/samples.js'
 import { BIG, COMPOSED, DIGITS, HUNDREDS, NUMBER_WORDS, ONES, PLACES, TEENS, TENS } from '../src/lib/numbers.js'
+import { LEXICON } from '../src/lib/lexicon.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repo = join(here, '..')
@@ -73,7 +74,7 @@ function inlineJson(value) {
 
 // WORDS 는 화면에 그리지 않는다 — 사전이 쓴다 (아래 inlineDictionary 참고)
 const NUMBERS = { DIGITS, ONES, TEENS, TENS, HUNDREDS, BIG, PLACES, COMPOSED, WORDS: NUMBER_WORDS }
-const data = { SAMPLES, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS, NUMBERS }
+const data = { SAMPLES, LETTERS, FAMILIES, MARKS, LONGS, EXTRAS, NUMBERS, LEXICON }
 
 // 소리 모듈도 그대로 넣는다. 읽기판에도 stop() 이 있어서 이름이 겹치므로
 // 객체로 감싸 Speech.speak(...) 처럼 쓰게 한다.
@@ -85,6 +86,17 @@ function inlineSpeech(source) {
     }
   }
   return `(function () {\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
+}
+
+// 낱말 다듬기도 그대로 넣는다. 아무것도 가져오지 않는 모듈이라 앞머리가 필요 없다.
+function inlinePolish(source) {
+  for (const name of ['polish', 'roman']) {
+    if (!source.includes(`export const ${name}`) && !source.includes(`export function ${name}`)) {
+      throw new Error(`polish.js 에 ${name} 이 없습니다`)
+    }
+  }
+  if (importedNames(source).length) throw new Error('polish.js 가 무언가를 가져오게 되었습니다')
+  return `(function () {\n${inlineModule(source)}\n  return { polish, roman };\n})()`
 }
 
 // 결합표도 그대로 넣는다. readWord 는 위 엔진에 이미 있다.
@@ -118,8 +130,11 @@ function inlineDictionary(source) {
     SAMPLES: 'DECKS',
     MARKS: 'VOWEL_MARKS',
     NUMBER_WORDS: 'NUMBERS.WORDS',
-    // 아래 셋은 app.js 에 이미 같은 이름으로 있다
-    LETTERS: null, LONGS: null, isArabicLetter: null, stripHarakat: null, readWord: null,
+    polish: 'Polish.polish',
+    roman: 'Polish.roman',
+    // 아래 것들은 app.js 에 이미 같은 이름으로 있다
+    LETTERS: null, LONGS: null, LEXICON: null,
+    isArabicLetter: null, stripHarakat: null, readWord: null,
   }
   for (const name of importedNames(source)) {
     if (!(name in prologue)) {
@@ -133,7 +148,7 @@ function inlineDictionary(source) {
   return `(function () {\n${head}\n${inlineModule(source)}\n  return { ${api.join(', ')} };\n})()`
 }
 
-const [template, appJs, styles, engine, speech, dictionary, syllables] = await Promise.all([
+const [template, appJs, styles, engine, speech, dictionary, syllables, polishSrc] = await Promise.all([
   read('demo/template.html'),
   read('demo/app.js'),
   read('src/styles.css'),
@@ -141,6 +156,7 @@ const [template, appJs, styles, engine, speech, dictionary, syllables] = await P
   read('src/lib/speech.js'),
   read('src/lib/dictionary.js'),
   read('src/lib/syllables.js'),
+  read('src/lib/polish.js'),
 ])
 
 const page = template
@@ -150,7 +166,8 @@ const page = template
     .replace('/*__TRANSLITERATE__*/', () => inlineModule(engine))
     .replace('/*__SPEECH__*/ {}', () => inlineSpeech(speech))
     .replace('/*__DICTIONARY__*/ {}', () => inlineDictionary(dictionary))
-    .replace('/*__SYLLABLES__*/ {}', () => inlineSyllables(syllables)))
+    .replace('/*__SYLLABLES__*/ {}', () => inlineSyllables(syllables))
+    .replace('/*__POLISH__*/ {}', () => inlinePolish(polishSrc)))
 
 const leftover = page.match(/\/\*__[A-Z_]+__\*\//g)
 if (leftover) throw new Error(`치환되지 않은 자리가 있습니다: ${leftover.join(', ')}`)
@@ -216,3 +233,4 @@ console.log(`  예문 ${SAMPLES.length} · 자음 ${LETTERS.length} · 무리 ${
   + ` 부호 ${MARKS.length} · 장모음 ${LONGS.length} · 그밖 ${EXTRAS.length}`)
 console.log(`  숫자 ${[DIGITS, ONES, TEENS, TENS, HUNDREDS, BIG, PLACES, COMPOSED]
   .reduce((n, rows) => n + rows.length, 0)} · 사전에 든 숫자 낱말 ${NUMBER_WORDS.length}`)
+console.log(`  말뭉치 낱말 ${LEXICON.length.toLocaleString()}`)

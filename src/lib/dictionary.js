@@ -15,6 +15,8 @@ import { LETTERS, LONGS, MARKS } from './letters.js'
 import { NUMBER_WORDS } from './numbers.js'
 import { isArabicLetter, stripHarakat } from './arabic.js'
 import { readWord } from './transliterate.js'
+import { polish, roman } from './polish.js'
+import { LEXICON } from './lexicon.js'
 
 /**
  * 찾을 때 쓰는 열쇠.
@@ -44,7 +46,14 @@ function buildIndex() {
     if (!index.has(bare)) index.set(bare, [])
     const bucket = index.get(bare)
     if (bucket.some((entry) => entry.a === a)) return
-    bucket.push({ a, k: k || readWord(a).k, r: r || readWord(a).r, m: m || '' })
+    // 사람이 고른 값이 있으면 그것을, 없으면 엔진이 읽고 다듬은 값을 쓴다
+    const built = k && r ? null : readWord(a)
+    bucket.push({
+      a,
+      k: k || polish(built.l),
+      r: r || roman(built.r),
+      m: m || '',
+    })
   }
 
   SAMPLES.forEach((sample) => sample.w.forEach((word) => add(word.a, word.k, word.r, word.m)))
@@ -53,16 +62,35 @@ function buildIndex() {
   MARKS.forEach((row) => add(row.ex, row.exk, '', ''))
   NUMBER_WORDS.forEach((row) => add(row.a, row.k, row.r, row.m))
 
+  // 말뭉치에서 들여온 낱말은 맨 뒤에 붙인다 — 뜻이 없고 사람 손이 닿지
+  // 않았으므로, 뼈대가 겹치면 위의 것들이 언제나 앞선다.
+  LEXICON.forEach((a) => add(a))
+
   return index
 }
 
-const INDEX = buildIndex()
+// 색인은 처음 찾을 때 만든다. 낱말 이만 개를 읽어 다듬는 데 몇백 ms 가 드는데,
+// 앱을 여는 순간에 그 값을 치르면 첫 화면이 그만큼 늦게 뜬다. 아랍어를 실제로
+// 입력하기 전까지는 필요 없는 일이다.
+let INDEX = null
+const index = () => (INDEX ||= buildIndex())
+
+/**
+ * 색인을 미리 만들어 둔다. 화면이 뜬 뒤 한가할 때 부르면, 처음 글을 칠 때
+ * 손이 멈추지 않는다. 부르지 않아도 첫 찾기에서 알아서 만들어진다.
+ */
+export function warmUp() {
+  if (INDEX) return
+  const build = () => index()
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(build, { timeout: 2000 })
+  else setTimeout(build, 0)
+}
 
 /** 색인에 든 뼈대 수와 낱말 수 */
 export function size() {
   let words = 0
-  INDEX.forEach((bucket) => { words += bucket.length })
-  return { skeletons: INDEX.size, words }
+  index().forEach((bucket) => { words += bucket.length })
+  return { skeletons: index().size, words }
 }
 
 /**
@@ -70,7 +98,7 @@ export function size() {
  * @returns {{a: string, k: string, r: string, m: string}[]} 없으면 빈 배열
  */
 export function lookup(word) {
-  return INDEX.get(key(word)) || []
+  return index().get(key(word)) || []
 }
 
 /** 이 낱말에 부호가 하나라도 붙어 있는가 */
