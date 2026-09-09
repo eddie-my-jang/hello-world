@@ -32,6 +32,12 @@ test('apply() 는 소유 어미를 붙이고, 여성 표지 ة 는 ت 로 바꾼
   assert.equal(segTa.apply('مَدْرَسَة'), 'مَدْرَسَتِي')
 })
 
+test('apply() 는 부정 목적격의 알리프를 탄윈으로 되돌린다', () => {
+  const seg = segmentations('فندقا').flat().find((s) => s.stem === 'فندق')
+  assert.ok(seg, 'فندق 로 남는 자리가 있어야 한다')
+  assert.equal(seg.apply('فُنْدُق'), 'فُنْدُقًا')
+})
+
 test('짧은 뼈대는 접사로 다 뜯기지 않는다', () => {
   // 최소 두 글자는 남아야 한다 — 안 그러면 아무 글자에나 접사를 물려
   // 엉뚱한 걸 찾아 준다
@@ -83,4 +89,22 @@ test('readTextSmart() 로 접사 붙은 문장을 통째로 읽는다', () => {
 test('그래도 못 찾는 것은 지어내지 않는다', () => {
   const out = readTextSmart('زززززز')
   assert.ok(out.w[0].unknown > 0)
+})
+
+test('부정 목적격 명사의 알리프를 떼고 탄윈으로 되짚는다', () => {
+  // «فُنْدُق」(호텔)이 목적어 자리에 오면 «فُنْدُقًا」(호텔을)이 되어 끝에
+  // 소리 없는 알리프가 하나 더 붙는다. 부호 없이 치면 «فندقا」로 뼈대가
+  // 갈리므로, 이 알리프를 떼고 탄윈 파트흐를 붙여 사전의 표제형을 되찾는다.
+  // كتابا·بيتا 처럼 말뭉치에 통째로 살아남은 것 말고, 손으로 적은
+  // 어휘(فندق 호텔)에도 같은 문법이 통해야 한다.
+  const found = lookup('فندقا')
+  assert.ok(found.length, 'فندقا 를 못 찾는다')
+  assert.equal(found[0].a, 'فُنْدُقًا')
+  assert.equal(readWord(found[0].a).unknown, 0)
+})
+
+test('1인칭 목적어 어미 -ني 도 뗀다', () => {
+  const found = lookup('يمكنني')
+  assert.ok(found.length, 'يمكنني 를 못 찾는다')
+  for (const entry of found) assert.equal(readWord(entry.a).unknown, 0, entry.a)
 })
