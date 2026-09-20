@@ -912,7 +912,8 @@ function fmtAgo(iso) {{
 function fmtGen(iso) {{
   const d = new Date(iso);
   const p = (n) => String(n).padStart(2, '0');
-  return `${{d.getFullYear()}}.${{p(d.getMonth() + 1)}}.${{p(d.getDate())}} ${{p(d.getHours())}}:${{p(d.getMinutes())}}`;
+  const W = ['일', '월', '화', '수', '목', '금', '토'];
+  return `${{d.getFullYear()}}.${{p(d.getMonth() + 1)}}.${{p(d.getDate())}}(${{W[d.getDay()]}}) ${{p(d.getHours())}}:${{p(d.getMinutes())}}`;
 }}
 function esc(s) {{ return String(s).replace(/[<>&"]/g, (c) => ({{'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}})[c]); }}
 
