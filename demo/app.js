@@ -99,6 +99,12 @@
      ═══════════════════════════════════════════════════════════════════════ */
   var Affix = /*__AFFIX__*/ {};
 
+  /* ═══ 퀴즈 ════════════════════════════════════════════════════════════════
+     build.mjs 가 src/lib/quiz.js 를 여기에 그대로 넣는다. 문제·오답을
+     만드는 순수 함수라 앱·데모가 같은 결과를 낸다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var Quiz = /*__QUIZ__*/ {};
+
   /* ═══ 사전 ════════════════════════════════════════════════════════════════
      build.mjs 가 src/lib/dictionary.js 를 여기에 넣는다. 데모에서는 예문이
      DECKS·VOWEL_MARKS 라는 이름이라 앞에서 맞춰 준다.
@@ -917,7 +923,7 @@
       render();
     }
 
-    return { init: init };
+    return { init: init, detail: detail };
   })();
 
   /* ═══ 숫자판 ═════════════════════════════════════════════════════════════
@@ -1003,6 +1009,276 @@
     return { init: init };
   })();
 
+  /* ═══ 퀴즈 ════════════════════════════════════════════════════════════════
+     저장소의 src/pages/QuizPage.jsx 와 같은 화면이다. 정답·오답은 Quiz
+     (src/lib/quiz.js) 가 만들고, 여기서는 그 결과를 그려 넣기만 한다.
+     settings(설정) → running(풀기) → results(성적) 세 단계를 오간다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var quiz = (function () {
+    var state = {
+      scope: 'all', mode: 'both', count: 10, phase: 'settings',
+      pool: [], items: [], index: 0, chosen: null, history: []
+    };
+
+    function scopedPool() {
+      return Quiz.buildPool(state.scope, { samples: DECKS, letters: LETTERS });
+    }
+
+    function segmented(hostId, items, current, onPick) {
+      var host = $(hostId);
+      host.innerHTML = '';
+      items.forEach(function (it) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'segmented__btn' + (it.id === current ? ' is-active' : '');
+        b.textContent = it.label;
+        b.addEventListener('click', function () { onPick(it.id); });
+        host.appendChild(b);
+      });
+    }
+
+    function renderHint() {
+      var pool = scopedPool();
+      var max = Quiz.poolSize(pool, state.mode);
+      $('quizHint').textContent = max > 0
+        ? '이 설정으로 최대 ' + max + '문제까지 낼 수 있습니다. 글자는 뜻이 없어 「읽기」로만 묻습니다.'
+        : '이 설정으로는 문제를 낼 수 없습니다. 「무엇을 물을까요」를 바꿔 보세요 — 글자는 뜻을 묻지 않습니다.';
+      $('quizStart').disabled = max === 0;
+    }
+
+    function renderPickers() {
+      segmented('quizScope', Quiz.SCOPES, state.scope, function (id) { state.scope = id; renderPickers(); });
+      segmented('quizMode', Quiz.MODES, state.mode, function (id) { state.mode = id; renderPickers(); });
+      var counts = [5, 10, 20].map(function (n) { return { id: n, label: String(n) }; });
+      segmented('quizCount', counts, state.count, function (n) { state.count = n; renderPickers(); });
+      renderHint();
+    }
+
+    function setPhase(phase) {
+      state.phase = phase;
+      $('quizSettings').hidden = phase !== 'settings';
+      $('quizRunning').hidden = phase !== 'running';
+      $('quizResultsPanel').hidden = phase !== 'results';
+    }
+
+    /* 읽기판의 board 와 같은 모양이지만, 여기서는 되짚는 자리가 아니라
+       풀이를 보여 주는 자리라 전부 「다 읽음」 색으로 고정해 그린다. */
+    function wordBoard(word) {
+      var board = document.createElement('div');
+      board.className = 'board';
+      board.setAttribute('dir', 'rtl');
+      board.setAttribute('lang', 'ar');
+      joinPieces(word.l.map(function (l) { return l.a; })).forEach(function (piece) {
+        var span = document.createElement('span');
+        span.className = 'board__letter is-done';
+        span.textContent = piece;
+        board.appendChild(span);
+      });
+      return board;
+    }
+
+    function renderExplain(item) {
+      var host = $('quizExplain');
+      host.innerHTML = '';
+
+      if (item.kind === 'letter') {
+        host.appendChild(chart.detail(item.letter));
+        return;
+      }
+
+      var box = document.createElement('div');
+      box.className = 'quiz-explain';
+
+      if (item.sample.t) {
+        var gloss = document.createElement('p');
+        gloss.className = 'meaning meaning--all';
+        gloss.textContent = item.sample.t;
+        box.appendChild(gloss);
+      }
+
+      var words = document.createElement('div');
+      words.className = 'quiz-explain__words';
+      item.sample.w.forEach(function (word) {
+        var wrap = document.createElement('div');
+        wrap.className = 'quiz-explain__word';
+        wrap.appendChild(wordBoard(word));
+        var meta = document.createElement('div');
+        meta.className = 'word-meta';
+        [['word-meta__kr', word.k], ['word-meta__ro', word.r], ['word-meta__m', word.m]].forEach(function (pair) {
+          if (!pair[1]) return;
+          var s = document.createElement('span');
+          s.className = pair[0];
+          s.textContent = pair[1];
+          meta.appendChild(s);
+        });
+        wrap.appendChild(meta);
+        words.appendChild(wrap);
+      });
+      box.appendChild(words);
+
+      if (Speech.isSupported()) {
+        var listen = document.createElement('button');
+        listen.type = 'button';
+        listen.className = 'btn btn--quiet';
+        listen.textContent = '🔊 듣기';
+        listen.addEventListener('click', function () { Speech.speak(item.arabic); });
+        box.appendChild(listen);
+      }
+
+      host.appendChild(box);
+    }
+
+    function renderQuestion() {
+      var q = state.items[state.index];
+      state.chosen = null;
+      $('quizProgress').textContent = (state.index + 1) + ' / ' + state.items.length;
+      $('quizScoreNow').textContent = '맞음 ' + state.history.filter(function (h) { return h.correct; }).length;
+      $('quizPromptAr').textContent = q.item.arabic;
+      $('quizPromptLabel').textContent = q.prompt;
+      $('quizFeedback').hidden = true;
+      $('quizNext').hidden = true;
+      $('quizExplain').innerHTML = '';
+
+      var host = $('quizOptions');
+      host.innerHTML = '';
+      q.options.forEach(function (option) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'quiz-option';
+        b.textContent = option;
+        b.addEventListener('click', function () { answer(option); });
+        host.appendChild(b);
+      });
+    }
+
+    function answer(option) {
+      if (state.chosen !== null) return;
+      state.chosen = option;
+      var q = state.items[state.index];
+
+      var opts = $('quizOptions').children;
+      for (var i = 0; i < opts.length; i++) {
+        var b = opts[i];
+        b.disabled = true;
+        if (b.textContent === q.answer) b.className = 'quiz-option is-correct';
+        else if (b.textContent === option) b.className = 'quiz-option is-wrong';
+      }
+
+      var correct = option === q.answer;
+      $('quizFeedback').hidden = false;
+      $('quizFeedback').className = 'quiz-feedback ' + (correct ? 'is-correct' : 'is-wrong');
+      $('quizFeedback').textContent = correct ? '정답입니다.' : ('아쉽네요 — 정답은 「' + q.answer + '」입니다.');
+
+      renderExplain(q.item);
+      $('quizNext').hidden = false;
+      $('quizNext').textContent = state.index + 1 < state.items.length ? '다음 문제' : '결과 보기';
+    }
+
+    function renderResults() {
+      var total = state.history.length;
+      var score = state.history.filter(function (h) { return h.correct; }).length;
+      var missed = state.history.filter(function (h) { return !h.correct; });
+      $('quizResultsNum').textContent = score + ' / ' + total;
+      $('quizResultsPct').textContent = (total ? Math.round(score / total * 100) : 0) + '%';
+
+      var host = $('quizResultsList');
+      host.innerHTML = '';
+      if (missed.length) {
+        var lead = document.createElement('p');
+        lead.className = 'quiz-settings__hint';
+        lead.textContent = '틀린 ' + missed.length + '문제';
+        host.appendChild(lead);
+        missed.forEach(function (h) {
+          var row = document.createElement('div');
+          row.className = 'quiz-miss';
+          row.innerHTML = '<span class="quiz-miss__ar" dir="rtl" lang="ar"></span>'
+            + '<span class="quiz-miss__wrong"></span><span class="quiz-miss__right"></span>';
+          row.children[0].textContent = h.question.item.arabic;
+          row.children[1].textContent = h.chosen;
+          row.children[2].textContent = h.question.answer;
+          host.appendChild(row);
+        });
+      }
+      $('quizRetry').hidden = missed.length === 0;
+    }
+
+    function start() {
+      var pool = scopedPool();
+      var items = Quiz.makeQuiz(pool, { mode: state.mode, count: state.count });
+      if (!items.length) {
+        $('quizError').hidden = false;
+        $('quizError').textContent = '이 설정으로는 문제를 만들지 못했습니다. 다른 범위나 물음 갈래를 골라 보세요.';
+        return;
+      }
+      $('quizError').hidden = true;
+      state.pool = pool;
+      state.items = items;
+      state.index = 0;
+      state.history = [];
+      setPhase('running');
+      renderQuestion();
+    }
+
+    function next() {
+      var q = state.items[state.index];
+      state.history.push({ question: q, chosen: state.chosen, correct: state.chosen === q.answer });
+      if (state.index + 1 < state.items.length) {
+        state.index++;
+        renderQuestion();
+      } else {
+        renderResults();
+        setPhase('results');
+      }
+    }
+
+    function retryMissed() {
+      var missed = state.history.filter(function (h) { return !h.correct; });
+      var rebuilt = missed
+        .map(function (h) { return Quiz.buildQuestion(h.question.item, h.question.type, state.pool, Math.random); })
+        .filter(Boolean);
+      if (!rebuilt.length) return;
+      state.items = rebuilt;
+      state.index = 0;
+      state.history = [];
+      setPhase('running');
+      renderQuestion();
+    }
+
+    function init() {
+      renderPickers();
+      $('quizListen').hidden = !Speech.isSupported();
+
+      $('quizStart').addEventListener('click', start);
+      $('quizNext').addEventListener('click', next);
+      $('quizRetry').addEventListener('click', retryMissed);
+      $('quizNewQuiz').addEventListener('click', function () { setPhase('settings'); renderPickers(); });
+      $('quizListen').addEventListener('click', function () {
+        var q = state.items[state.index];
+        if (!q) return;
+        Speech.speak(q.item.arabic, { rate: q.item.kind === 'letter' ? 0.75 : 0.85 });
+      });
+
+      // 숫자 1-4 로 선택지를 고르고, 고른 뒤엔 엔터로 다음 문제
+      document.addEventListener('keydown', function (e) {
+        if ($('pageQuiz').hidden || state.phase !== 'running') return;
+        var tag = e.target && e.target.tagName;
+        if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+        var q = state.items[state.index];
+        if (state.chosen === null && ['1', '2', '3', '4'].indexOf(e.key) !== -1) {
+          var option = q && q.options[Number(e.key) - 1];
+          if (option) answer(option);
+        } else if (state.chosen !== null && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          next();
+        }
+      });
+
+      setPhase('settings');
+    }
+
+    return { init: init };
+  })();
+
   /* ═══ 글꼴 ════════════════════════════════════════════════════════════════
      저장소의 src/lib/font.js 와 같다. 고른 것은 :root 의 data-font 로만
      나타내고, 스타일시트가 그 표시를 보고 --f-ar 하나를 갈아 끼운다.
@@ -1040,7 +1316,8 @@
   var PAGES = {
     '': { page: 'pageReader', tab: 'tabReader', sub: '사진 속 단어를 한 글자씩' },
     'letters': { page: 'pageLetters', tab: 'tabLetters', sub: '자음 28자와 모음 부호' },
-    'numbers': { page: 'pageNumbers', tab: 'tabNumbers', sub: '낱개부터 천의 자리까지' }
+    'numbers': { page: 'pageNumbers', tab: 'tabNumbers', sub: '낱개부터 천의 자리까지' },
+    'quiz': { page: 'pageQuiz', tab: 'tabQuiz', sub: '읽기와 뜻을 맞혀 보며 복습' }
   };
 
   function currentRoute() {
@@ -1065,11 +1342,13 @@
   $('tabReader').addEventListener('click', function () { window.location.hash = '#/'; });
   $('tabLetters').addEventListener('click', function () { window.location.hash = '#/letters'; });
   $('tabNumbers').addEventListener('click', function () { window.location.hash = '#/numbers'; });
+  $('tabQuiz').addEventListener('click', function () { window.location.hash = '#/quiz'; });
   window.addEventListener('hashchange', function () { applyRoute(); window.scrollTo({ top: 0 }); });
 
   fonts.init();
   reader.init();
   chart.init();
   numbers.init();
+  quiz.init();
   applyRoute();
 })();
