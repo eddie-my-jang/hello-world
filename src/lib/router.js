@@ -6,6 +6,7 @@ export const ROUTES = [
   { path: '', label: '읽기판', hint: '사진 속 단어를 한 글자씩' },
   { path: 'letters', label: '자모표', hint: '자음 28자와 모음 부호' },
   { path: 'numbers', label: '숫자', hint: '낱개부터 천의 자리까지' },
+  { path: 'quiz', label: '퀴즈', hint: '읽기와 뜻을 맞혀 보며 복습' },
 ]
 
 function readHash() {

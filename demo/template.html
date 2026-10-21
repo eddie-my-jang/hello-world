@@ -79,6 +79,7 @@ kbd {
         <button type="button" class="tab is-active" id="tabReader" aria-current="page">읽기판</button>
         <button type="button" class="tab" id="tabLetters">자모표</button>
         <button type="button" class="tab" id="tabNumbers">숫자</button>
+        <button type="button" class="tab" id="tabQuiz">퀴즈</button>
       </nav>
       <div class="fonts" id="fonts" role="group" aria-label="아랍어 글꼴">
         <span class="fonts__label">글꼴</span>
@@ -322,6 +323,55 @@ kbd {
       <span class="inline-ar" lang="ar">خ</span> 를 「ㅋ」로, <span class="inline-ar" lang="ar">ث</span> 를
       「ㅅ」로 적은 것은 자모표와 같은 기준입니다.
     </p>
+  </div>
+
+  <!-- ── 퀴즈 ───────────────────────────────────────────────────────────── -->
+  <div class="page" id="pageQuiz" hidden>
+    <section class="panel quiz-settings" id="quizSettings">
+      <div class="quiz-settings__row">
+        <span class="quiz-settings__label">무엇을 낼까요</span>
+        <div class="segmented" id="quizScope" role="group" aria-label="범위"></div>
+      </div>
+      <div class="quiz-settings__row">
+        <span class="quiz-settings__label">무엇을 물을까요</span>
+        <div class="segmented" id="quizMode" role="group" aria-label="물음 갈래"></div>
+      </div>
+      <div class="quiz-settings__row">
+        <span class="quiz-settings__label">몇 문제</span>
+        <div class="segmented" id="quizCount" role="group" aria-label="문제 수"></div>
+      </div>
+      <p class="quiz-settings__hint" id="quizHint"></p>
+      <p class="status status--error" id="quizError" hidden></p>
+      <button type="button" class="btn btn--primary" id="quizStart">시작하기</button>
+    </section>
+
+    <section class="panel quiz-question" id="quizRunning" hidden>
+      <div class="quiz-progress">
+        <span id="quizProgress"></span>
+        <span id="quizScoreNow"></span>
+      </div>
+      <div class="quiz-prompt">
+        <span class="quiz-prompt__ar" id="quizPromptAr" dir="rtl" lang="ar"></span>
+        <button type="button" class="btn btn--quiet" id="quizListen">🔊 듣기</button>
+      </div>
+      <p class="quiz-prompt__label" id="quizPromptLabel"></p>
+      <div class="quiz-options" id="quizOptions"></div>
+      <p class="quiz-feedback" id="quizFeedback" hidden></p>
+      <div id="quizExplain"></div>
+      <button type="button" class="btn btn--primary" id="quizNext" hidden>다음 문제</button>
+    </section>
+
+    <section class="panel quiz-results" id="quizResultsPanel" hidden>
+      <div class="quiz-results__score">
+        <span class="quiz-results__num" id="quizResultsNum"></span>
+        <span class="quiz-results__pct" id="quizResultsPct"></span>
+      </div>
+      <div class="quiz-results__list" id="quizResultsList"></div>
+      <div class="editor__actions">
+        <button type="button" class="btn btn--primary" id="quizRetry" hidden>틀린 것만 다시 풀기</button>
+        <button type="button" class="btn" id="quizNewQuiz">새 퀴즈</button>
+      </div>
+    </section>
   </div>
 </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import ReaderPage from './pages/ReaderPage.jsx'
 import LettersPage from './pages/LettersPage.jsx'
 import NumbersPage from './pages/NumbersPage.jsx'
+import QuizPage from './pages/QuizPage.jsx'
 import FontPicker from './components/FontPicker.jsx'
 import { applyFont, readStored } from './lib/font.js'
 import { ROUTES, useRoute } from './lib/router.js'
@@ -42,6 +43,7 @@ export default function App() {
 
       {active.path === 'letters' && <LettersPage />}
       {active.path === 'numbers' && <NumbersPage />}
+      {active.path === 'quiz' && <QuizPage />}
       {active.path === '' && <ReaderPage />}
 
       <footer className="footer">
