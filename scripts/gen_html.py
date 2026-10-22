@@ -26,6 +26,11 @@ daily_summary = digest.get("dailySummary", "")
 weekly_summary = digest.get("weeklySummary", "")
 daily_keywords = digest.get("dailyKeywords", [])
 weekly_keywords = digest.get("weeklyKeywords", [])
+monthly_keywords = digest.get("monthlyKeywords", [])
+watch_keywords = digest.get("watchKeywords", [])
+concept_index = digest.get("conceptIndex", {})
+monthly_history = digest.get("monthlyHistory", [])
+chapter_timeline = digest.get("chapterTimeline", {"months": [], "items": []})
 
 CATEGORY_LABELS = {
     "offering": "오퍼링 후보",
@@ -39,6 +44,11 @@ daily_summary_json = json.dumps(daily_summary, ensure_ascii=False)
 weekly_summary_json = json.dumps(weekly_summary, ensure_ascii=False)
 daily_keywords_json = json.dumps(daily_keywords, ensure_ascii=False)
 weekly_keywords_json = json.dumps(weekly_keywords, ensure_ascii=False)
+monthly_keywords_json = json.dumps(monthly_keywords, ensure_ascii=False)
+watch_keywords_json = json.dumps(watch_keywords, ensure_ascii=False)
+concept_index_json = json.dumps(concept_index, ensure_ascii=False)
+monthly_history_json = json.dumps(monthly_history, ensure_ascii=False)
+chapter_timeline_json = json.dumps(chapter_timeline, ensure_ascii=False)
 
 html = f"""<title>AI 브리핑 · 화학전지사업부</title>
 <style>
@@ -383,13 +393,13 @@ body {{
   white-space: nowrap;
   cursor: pointer;
 }}
-/* 근거 등급: 급상승은 채움, 상승은 테두리만 */
-.kw.tier-hot {{
+/* 생애주기: 등장·부상은 채움, 챕터는 테두리만, 정착·퇴조 등은 기본 */
+.kw.st-new {{
   border-color: var(--accent);
   color: var(--accent-strong);
   background: var(--accent-tint);
 }}
-.kw.tier-up {{
+.kw.st-chapter {{
   border-color: var(--accent);
   color: var(--accent-strong);
   background: var(--bg);
@@ -400,6 +410,63 @@ body {{
   opacity: 0.5;
   font-size: 9px;
 }}
+
+.kw.watch {{ border-style: dashed; }}
+.kw-sec {{ margin-bottom: 8px; }}
+.kw-sec:last-child {{ margin-bottom: 10px; }}
+.kw-sec-lbl {{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+}}
+.kw-sec .kw-row {{ margin-bottom: 0; align-items: center; }}
+.kw-empty {{ font-size: 11.5px; color: var(--ink-dim); }}
+.tl-link {{
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-strong);
+  cursor: pointer;
+  white-space: nowrap;
+}}
+
+.ev-status {{
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+  margin-right: 6px;
+}}
+.ev-def {{ font-size: 13.5px; line-height: 1.55; margin: 0 0 8px; }}
+.ev-lineage {{ font-size: 12px; color: var(--ink-dim); margin: 0 0 12px; }}
+.ev-why {{ font-size: 12.5px; line-height: 1.5; margin: 0 0 12px; color: var(--ink); }}
+.spark {{ display: block; margin: 2px 0 2px; }}
+.spark rect {{ fill: var(--accent); }}
+.spark rect.zero {{ fill: var(--line); }}
+.spark-cap {{ font-size: 10.5px; color: var(--ink-dim); display: flex; justify-content: space-between; width: 168px; }}
+.ev-srcs {{ display: flex; flex-direction: column; gap: 8px; }}
+
+.tl-sec {{ font-size: 12px; font-weight: 600; color: var(--ink-dim); margin: 14px 0 8px; }}
+.tl-hist {{ display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12.5px; }}
+.tl-hist dt {{ font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ink-dim); padding-top: 3px; }}
+.tl-hist dd {{ margin: 0; display: flex; flex-wrap: wrap; gap: 5px; }}
+.tl-hist dd.partial::after {{ content: "진행 중"; font-size: 10.5px; color: var(--ink-dim); align-self: center; }}
+.hm {{ display: grid; grid-template-columns: 104px 1fr; gap: 3px 8px; align-items: center; }}
+.hm-name {{ font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }}
+.hm-row {{ display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; }}
+.hm-row i {{ display: block; height: 12px; border-radius: 2px; background: var(--accent); }}
+.hm-row i.z {{ background: var(--surface); }}
+.hm-axis {{ display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-dim); }}
 
 .ev-term {{
   font-family: 'JetBrains Mono', monospace;
@@ -823,9 +890,22 @@ body {{
   <div class="grabber"></div>
   <h2 id="ev-label"></h2>
   <div class="ev-term" id="ev-term"></div>
+  <p class="ev-def" id="ev-def"></p>
+  <p class="ev-lineage" id="ev-lineage"></p>
+  <p class="ev-why" id="ev-why"></p>
   <dl class="ev-grid" id="ev-grid"></dl>
-  <div id="ev-src-wrap"></div>
-  <p class="ev-note">태그는 두 신호를 따로 재서 붙입니다. <b>추적 채널 언급</b>은 15개 채널 최근 750개 영상을 전수 조사한 값이고, <b>글로벌 검색 추세</b>는 YouTube Data API의 추정 결과 수입니다. 후자는 같은 질의에도 10배 넘게 흔들리는 경우가 있어 창마다 2회, 흔들리면 4회까지 샘플링해 중앙값을 쓰고, 그래도 안 잡히면 판정에서 뺍니다. 둘 다 오르면 급상승, 하나만 오르면 상승이며, 어느 쪽도 안 움직이는 범용어는 태그하지 않습니다.</p>
+  <div class="ev-srcs" id="ev-src-wrap"></div>
+  <p class="ev-note">키워드는 이름 붙은 개념 사전(약 60개)에서만 뽑습니다. '보안·평가·거버넌스' 같은 범주어는 사전에 넣지 않습니다. 추적 채널의 2025년 1월 이후 전체 영상을 주 단위로 세어, 몇 달 공백 뒤 여러 채널에서 동시에 나타나 몇 주 이상 이어지는 개념을 새 챕터로 봅니다. 업로드가 많은 채널(컨퍼런스·뉴스)의 언급은 덜 세고, 드와케쉬·노정석 등 생각 리더 채널은 더 셉니다. 영상 설명·제목만 보므로 대화 속에서만 나온 말은 잡히지 않습니다.</p>
+</div>
+
+<div class="sheet" id="tl-sheet" hidden>
+  <div class="grabber"></div>
+  <h2>AI 챕터 연표 2025–2026</h2>
+  <div class="tl-sec">달마다 뽑힌 이달의 키워드</div>
+  <dl class="tl-hist" id="tl-hist"></dl>
+  <div class="tl-sec">개념별 월간 언급 채널 수</div>
+  <div class="hm" id="tl-hm"></div>
+  <p class="ev-note">지난달까지는 그 달 말일 시점으로 시계를 돌려 같은 규칙으로 다시 뽑은 결과입니다(그 이후 데이터는 보지 않음). 칸이 진할수록 그 달 그 개념을 다룬 채널이 많습니다.</p>
 </div>
 
 <div class="sheet" id="ch-sheet" hidden>
@@ -850,13 +930,19 @@ const DAILY_SUMMARY = {daily_summary_json};
 const WEEKLY_SUMMARY = {weekly_summary_json};
 const DAILY_KEYWORDS = {daily_keywords_json};
 const WEEKLY_KEYWORDS = {weekly_keywords_json};
-const KEYWORD_BY_LABEL = new Map(
-  [...DAILY_KEYWORDS, ...WEEKLY_KEYWORDS].map((k) => [k.label, k])
-);
+const MONTHLY_KEYWORDS = {monthly_keywords_json};
+const WATCH_KEYWORDS = {watch_keywords_json};
+const CONCEPT_INDEX = {concept_index_json};
+const MONTHLY_HISTORY = {monthly_history_json};
+const CHAPTER_TIMELINE = {chapter_timeline_json};
+const KEYWORD_BY_LABEL = new Map([
+  ...Object.entries(CONCEPT_INDEX),
+  ...[...DAILY_KEYWORDS, ...WEEKLY_KEYWORDS, ...MONTHLY_KEYWORDS, ...WATCH_KEYWORDS].map((k) => [k.label, k]),
+]);
 function kwClass(label) {{
   const k = KEYWORD_BY_LABEL.get(label);
   if (!k) return 'kw';
-  return 'kw ' + (k.tier === '급상승' ? 'tier-hot' : k.tier === '상승' ? 'tier-up' : '');
+  return 'kw ' + (k.status === '등장' || k.status === '부상' ? 'st-new' : k.status === '챕터' ? 'st-chapter' : '');
 }}
 
 const DAY_MS = 86400000;
@@ -1019,15 +1105,35 @@ function renderBrief() {{
   el.classList.add('clamp3');
   document.getElementById('brief-more').textContent = '더보기';
 
-  const kwRow = document.getElementById('brief-keywords');
-  kwRow.innerHTML = '';
-  const keywords = today ? DAILY_KEYWORDS : WEEKLY_KEYWORDS;
-  for (const k of keywords) {{
-    const span = document.createElement('span');
-    span.className = kwClass(k.label);
-    span.textContent = k.label;
-    span.onclick = () => openEvidence(k.label);
-    kwRow.appendChild(span);
+  const box = document.getElementById('brief-keywords');
+  box.innerHTML = '';
+  const sections = today
+    ? [['오늘', DAILY_KEYWORDS, '오늘 영상에 걸린 챕터 키워드 없음']]
+    : [['이주의', WEEKLY_KEYWORDS, '이번 주 문턱을 넘은 개념 없음'],
+       ['이달의', MONTHLY_KEYWORDS, '최근 4주 문턱을 넘은 개념 없음'],
+       ['주목', WATCH_KEYWORDS, null]];
+  for (const [name, list, empty] of sections) {{
+    if (!list.length && !empty) continue;
+    const sec = document.createElement('div');
+    sec.className = 'kw-sec';
+    sec.innerHTML = `<span class="kw-sec-lbl">${{name}} 키워드</span><div class="kw-row"></div>`;
+    const row = sec.querySelector('.kw-row');
+    for (const k of list) {{
+      const span = document.createElement('span');
+      span.className = kwClass(k.label) + (name === '주목' ? ' watch' : '');
+      span.textContent = k.label;
+      span.onclick = () => openEvidence(k.label);
+      row.appendChild(span);
+    }}
+    if (!list.length) row.innerHTML = `<span class="kw-empty">${{empty}}</span>`;
+    if (name === '이달의' || (today && name === '오늘')) {{
+      const b = document.createElement('button');
+      b.className = 'tl-link';
+      b.textContent = '연표 ›';
+      b.onclick = openTimeline;
+      sec.querySelector('.kw-sec-lbl').appendChild(b);
+    }}
+    box.appendChild(sec);
   }}
 }}
 
@@ -1178,6 +1284,7 @@ const scrim = document.getElementById('scrim');
 const promptSheet = document.getElementById('prompt-sheet');
 const chSheet = document.getElementById('ch-sheet');
 const evSheet = document.getElementById('ev-sheet');
+const tlSheet = document.getElementById('tl-sheet');
 const promptBtn = document.getElementById('prompt-btn');
 
 function closeSheets() {{
@@ -1185,12 +1292,34 @@ function closeSheets() {{
   promptSheet.hidden = true;
   chSheet.hidden = true;
   evSheet.hidden = true;
+  tlSheet.hidden = true;
   promptBtn.setAttribute('aria-expanded', 'false');
 }}
 scrim.onclick = closeSheets;
 
 /* ---------- 키워드 근거 ---------- */
-const SRC_TIER_LABEL = {{ official: '벤더 공식 채널', institutional: '기관 채널', community: '커뮤니티·컨퍼런스' }};
+const STATUS_NOTE = {{
+  '등장': '최근 4주 안에 여러 채널에서 처음 나타남',
+  '부상': '등장 4개월 이내, 여러 주째 이어지는 중',
+  '챕터': '1년 이내에 등장해 자리 잡은 새 챕터',
+  '정착': '이미 업계 기본어 — 배경 개념',
+  '퇴조': '한때 3개 채널 이상이 다뤘으나 최근 뜸함',
+  '간헐': '띄엄띄엄 언급 — 아직 흐름이 약함',
+  '잠잠': '최근 언급이 거의 없음',
+}};
+
+function sparkSvg(series) {{
+  // 최근 12주 주별 언급 채널 수. 단일 시리즈라 범례 없이 제목으로 설명한다.
+  const W = 168, H = 34, n = series.length, gap = 2;
+  const bw = (W - gap * (n - 1)) / n;
+  const max = Math.max(3, ...series);
+  return `<svg class="spark" width="${{W}}" height="${{H}}" viewBox="0 0 ${{W}} ${{H}}" role="img" aria-label="최근 12주 주별 언급 채널 수: ${{series.join(', ')}}">` +
+    series.map((x, i) => {{
+      const h = x ? Math.max(3, (x / max) * (H - 2)) : 2;
+      const wkAgo = n - 1 - i;
+      return `<rect class="${{x ? '' : 'zero'}}" x="${{(i * (bw + gap)).toFixed(1)}}" y="${{(H - h).toFixed(1)}}" width="${{bw.toFixed(1)}}" height="${{h.toFixed(1)}}" rx="2"><title>${{wkAgo ? wkAgo + '주 전' : '이번 주'}} · ${{x}}개 채널</title></rect>`;
+    }}).join('') + '</svg>';
+}}
 
 function openEvidence(label) {{
   const k = KEYWORD_BY_LABEL.get(label);
@@ -1198,40 +1327,52 @@ function openEvidence(label) {{
   closeSheets();
   const e = k.evidence || {{}};
   document.getElementById('ev-label').textContent = k.label;
-  document.getElementById('ev-term').textContent = k.term ? `공식 표기: ${{k.term}}` : '';
-
-  let corpusTxt = '—';
-  if (e.corpusRecent != null) {{
-    const chg = e.corpusBase === 0 ? '직전 8~60일엔 없던 표현'
-      : e.corpusLift ? `직전 8~60일 대비 ${{e.corpusLift}}배` : `직전 ${{e.corpusBase}}건`;
-    corpusTxt = `최근 7일 ${{e.corpusRecent}}건 · ${{e.corpusChannels}}개 채널 (${{chg}})`;
-  }}
-  let trendTxt = '—';
-  if (e.trendTier === '불안정' || e.trendStable === false) {{
-    trendTxt = '추정 불안정 — 판정에서 제외';
-  }} else if (e.trendTier) {{
-    trendTxt = e.trendRatio ? `${{e.trendTier}} · 작년 동기 대비 약 ${{e.trendRatio}}배` : e.trendTier;
-  }}
+  document.getElementById('ev-term').innerHTML =
+    `<span class="ev-status">${{esc(k.status || '')}}</span>${{esc(k.term || '')}} · ${{esc(k.kind || '')}}`;
+  document.getElementById('ev-def').textContent = k.def || '';
+  document.getElementById('ev-lineage').textContent = k.lineage ? `흐름: ${{k.lineage}}` : '';
+  document.getElementById('ev-why').textContent = k.why || '';
+  const born = e.emerged ? `${{e.emerged.slice(0, 4)}}년 ${{+e.emerged.slice(5)}}월` : (e.since ? `${{e.since.slice(0, 4)}}년 ${{+e.since.slice(5)}}월(용어 기준)` : '—');
   const rows = [
-    ['태그 등급', (k.tier || '—') + (e.corpusSurge && e.trendRatio >= 2 ? ' (두 신호 모두 상승)' : ' (한 신호만 상승)')],
-    ['추적 채널 언급', corpusTxt],
-    ['글로벌 검색 추세', trendTxt],
+    ['생애주기', `${{k.status}} — ${{STATUS_NOTE[k.status] || ''}}`],
+    ['추적 채널 첫 출현', born],
+    ['이번 주 / 지난주', `${{e.channelsNow ?? 0}}개 / ${{e.channelsLastWeek ?? 0}}개 채널`],
+    ['최근 4주', `${{e.active4 ?? 0}}주 활동 · ${{e.channels4 ?? 0}}개 채널`],
+    ['생각 리더 채널', (e.thinkers || []).map((t) => t.split(' (')[0]).join(', ') || '—'],
   ];
   const grid = document.getElementById('ev-grid');
-  grid.innerHTML = rows.map(([a, b]) => `<dt>${{esc(a)}}</dt><dd>${{esc(b)}}</dd>`).join('');
+  grid.innerHTML = rows.map(([a, b]) => `<dt>${{esc(a)}}</dt><dd>${{esc(b)}}</dd>`).join('') +
+    (e.weekly ? `<dt>12주 추이</dt><dd>${{sparkSvg(e.weekly)}}<div class="spark-cap"><span>12주 전</span><span>이번 주</span></div></dd>` : '');
 
-  const wrap = document.getElementById('ev-src-wrap');
-  if (e.source) {{
-    wrap.innerHTML =
-      `<a class="ev-src" href="${{e.source.link}}" target="_blank" rel="noopener">` +
-      `<span class="lbl">출처 · ${{esc(SRC_TIER_LABEL[e.source.tier] || e.source.tier)}} · ${{esc(e.source.channel)}}</span>` +
-      `<div class="ttl">${{esc(e.source.title)}}</div></a>`;
-  }} else {{
-    wrap.innerHTML = '';
-  }}
+  document.getElementById('ev-src-wrap').innerHTML = (e.sources || []).map((src) =>
+    `<a class="ev-src" href="${{esc(src.link)}}" target="_blank" rel="noopener">` +
+    `<span class="lbl">출처 · ${{esc(src.channel)}}</span>` +
+    `<div class="ttl">${{esc(src.title)}}</div></a>`).join('');
   scrim.hidden = false;
   evSheet.hidden = false;
 }}
+
+function openTimeline() {{
+  closeSheets();
+  document.getElementById('tl-hist').innerHTML = MONTHLY_HISTORY.slice().reverse().map((h) =>
+    `<dt>${{h.month.slice(2).replace('-', '.')}}</dt><dd class="${{h.partial ? 'partial' : ''}}">` +
+    (h.picks.length ? h.picks.map((p) => `<span class="${{kwClass(p.label)}}" data-tl="${{esc(p.label)}}">${{esc(p.label)}}</span>`).join('') : '<span class="kw-empty">문턱을 넘은 개념 없음</span>') +
+    '</dd>').join('');
+  const months = CHAPTER_TIMELINE.months || [];
+  const items = CHAPTER_TIMELINE.items || [];
+  const max = Math.max(1, ...items.flatMap((it) => it.monthly));
+  const cells = (it) => it.monthly.map((x, i) =>
+    `<i class="${{x ? '' : 'z'}}" style="${{x ? `opacity:${{(0.25 + 0.75 * x / max).toFixed(2)}}` : ''}}" title="${{esc(it.label)}} · ${{months[i]}} · ${{x}}개 채널"></i>`).join('');
+  document.getElementById('tl-hm').innerHTML = items.map((it) =>
+    `<span class="hm-name" data-tl="${{esc(it.label)}}" title="${{esc(it.label)}}">${{esc(it.label)}}</span><div class="hm-row">${{cells(it)}}</div>`).join('') +
+    (months.length ? `<span></span><div class="hm-axis"><span>${{months[0].replace('-', '.')}}</span><span>${{months[months.length - 1].replace('-', '.')}}</span></div>` : '');
+  scrim.hidden = false;
+  tlSheet.hidden = false;
+}}
+tlSheet.addEventListener('click', (ev) => {{
+  const t = ev.target.closest('[data-tl]');
+  if (t && KEYWORD_BY_LABEL.has(t.dataset.tl)) openEvidence(t.dataset.tl);
+}});
 
 document.getElementById('feed').addEventListener('click', (ev) => {{
   const more = ev.target.closest('[data-more]');
