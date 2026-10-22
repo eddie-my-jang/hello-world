@@ -13,11 +13,11 @@
      ② '무엇 이후의 무엇'이라는 전환을 표시할 것 ③ 제품·모델·회사·인물·사건 이름이 아닐 것
      (단 제품명이 장르명이 된 경우는 허용: Claw) ④ 범주어(보안·평가·거버넌스·코딩 에이전트 등,
      generic_block)가 아닐 것.
-  2. 이력 코퍼스(corpus_full.json, backfill_corpus.py) — 20개 채널의 2025-01 이후 전체 업로드.
+  2. 이력 코퍼스(corpus_full.json, backfill_corpus.py) — 추적 채널의 2025-01 이후 전체 업로드.
   3. 언급 판정 — 채널마다 반복되는 문구(구독 안내·스폰서·행사 홍보)를 자동 제거하고, URL·@핸들을
      지운 뒤, 위치별 가중치(제목 2, 본문 1, 타임스탬프 목차 줄 0.5, 해시태그 0.5)를 더해 1 이상일 때만
      '언급'으로 친다. 목차 한 줄·해시태그 하나·출처 링크 슬러그로는 언급이 성립하지 않는다.
-  4. 생애주기 — 주(최근 7일 단위) × 채널 시계열로 출현 시점(4주 안에 2개 채널 이상이 처음 모인 때)과
+  4. 생애주기 — 주(최근 7일 단위) × 채널 시계열로 출현 시점(8주 안에 4주 이상·3개 채널 이상 이어진 국면의 시작)과
      최근 8주 중 활동 주 수를 재서 등장 / 부상 / 챕터 / 정착 / 퇴조 / 잠잠 으로 나눈다.
   5. 선정 — 이주의 키워드: 이번 주 채널 수 + 지난주 이어짐 + 생각 리더 채널(드와케쉬·노정석 등) 가중,
      새로움(부상·챕터 우대, 정착 감점), 4주 가속도. 이달의 키워드: 최근 4주 지속 주 수·채널 수·
@@ -195,31 +195,38 @@ def analyze(corpus=None, matches=None, bp=None):
         for v, _ in hits[cid]:
             wk[week_idx(v)].add(v["channel"])
             mo[v["publishedAt"][:7]].add(v["channel"])
-        # 출현: 4주 창(그 주 포함 이후 3주)에 서로 다른 채널 2개 이상(가중 합 1 이상)이 처음 모인 주
-        em = None
+        # 활동 주: 그 주 언급 채널의 가중 합이 0.5 이상 (대량 업로드 채널 단독은 활동으로 안 침)
+        pres = [1 if ws(s) >= 0.5 else 0 for s in wk]
+        # 첫 언급: 4주 창(그 주 포함 이후 3주)에 서로 다른 채널 2개 이상(가중 합 1 이상)이 처음 모인 주
+        first = None
         for w in range(W - 1, -1, -1):
             u = set().union(*wk[max(0, w - 3):w + 1])
             if len(u) >= 2 and ws(u) >= 1.0:
-                em = w
+                first = w
                 break
-        # 활동 주: 그 주 언급 채널의 가중 합이 0.5 이상 (대량 업로드 채널 단독은 활동으로 안 침)
-        pres = [1 if ws(s) >= 0.5 else 0 for s in wk]
+        # 출현(챕터의 시작): 8주 창 안에 활동 주 4주 이상 + 서로 다른 채널 3개 이상이 처음 성립한 국면의
+        # 첫 활동 주. 그 전의 산발적 언급(2025년에 한두 번 스친 'harness' 등)은 출현으로 치지 않는다.
+        em = None
+        for w in range(W - 1, -1, -1):
+            lo = max(0, w - 7)
+            u = set().union(*wk[lo:w + 1])
+            if sum(pres[lo:w + 1]) >= 4 and len(u) >= 3 and ws(u) >= 2.0:
+                em = next(i for i in range(w, lo - 1, -1) if pres[i])
+                break
         a4, a8 = sum(pres[:4]), sum(pres[:8])
         ch4 = set().union(*wk[:4])
         ch_prev4 = set().union(*wk[4:8])
         th4 = sorted(ch4 & THINKERS)
         mser = [len(mo.get(m, ())) for m in months]
         peak = max(mser) if mser else 0
-        pre_window = em is not None and em >= W - 3       # 코퍼스 첫 3주에 이미 있었음
-        if em is None:
-            status = "잠잠"
-        elif em <= 4 and not pre_window:
-            status = "등장"
-        elif a8 >= 3 and em <= 16 and not pre_window:
+        pre_window = em is not None and em >= W - 3       # 코퍼스 첫 3주에 이미 지속 국면이었음
+        if em is None and first is not None and first <= 4:
+            status = "등장"                                # 막 여러 채널에 나타남(아직 지속 전)
+        elif em is not None and a8 >= 3 and em <= 16 and not pre_window:
             status = "부상"
-        elif a8 >= 4 and em <= 52 and not pre_window:
+        elif em is not None and a8 >= 4 and em <= 52 and not pre_window:
             status = "챕터"
-        elif a8 >= 4:
+        elif em is not None and a8 >= 4:
             status = "정착"
         elif peak >= 3 and a8 <= 2:
             status = "퇴조"
@@ -227,8 +234,10 @@ def analyze(corpus=None, matches=None, bp=None):
             status = "간헐"
         else:
             status = "잠잠"
+        if em is None and status == "등장":
+            em = first
         # 반짝 여부: 출현 후 8주 동안 활동 주가 2주 이하
-        fad = em is not None and em >= 8 and sum(pres[max(0, em - 7):em + 1]) <= 2
+        fad = first is not None and em is None and peak >= 3
         res[cid] = {
             "emergedWeek": em, "emerged": (NOW - timedelta(weeks=em)).strftime("%Y-%m") if em is not None else None,
             "preWindow": pre_window, "status": status, "fadAtBirth": fad,
@@ -257,10 +266,10 @@ def score(r):
 
 
 def fresh(r):
-    """정착·퇴조·간헐·잠잠은 배경어다 — 다시 급증(4주 가속 1.3 이상, 이번 주 가중 2 이상)할 때만 후보가 된다."""
+    """정착·퇴조·간헐·잠잠은 배경어다 — 다시 급증(4주 채널 가중 합이 직전 4주의 2배, 이번 주 가중 2.5 이상)할 때만 후보가 된다."""
     if r["status"] in ("등장", "부상", "챕터"):
         return True
-    return r["wNow"] >= 2 and (r["w4"] + 1) / (r["wPrev4"] + 1) >= 1.69
+    return r["wNow"] >= 2.5 and (r["w4"] + 1) / (r["wPrev4"] + 1) >= 2.0
 
 
 def picks(res):
@@ -279,8 +288,10 @@ def picks(res):
     mo = sorted(mo_ok, key=lambda x: -x[1]["scoreMonth"])[:3]
     # 주목 후보: 문턱은 못 넘었지만 새로 움직이는 개념(이번 주 언급 + 정착·퇴조 아님)
     taken = {c["id"] for c, _ in wk + mo}
-    watch = [(c, r) for c, r in rows if c["id"] not in taken and r["channelsNow"] and
-             r["status"] in ("등장", "부상", "챕터", "간헐") and r["scoreWeek"] >= 0.8]
+    # 간헐은 용어가 생긴 지 1년 안 된 것만(MCP처럼 오래된 기본어가 띄엄띄엄 나오는 건 주목거리가 아님)
+    young = (NOW - timedelta(days=365)).strftime("%Y-%m")
+    watch = [(c, r) for c, r in rows if c["id"] not in taken and r["channelsNow"] and r["scoreWeek"] >= 0.8 and
+             (r["status"] in ("등장", "부상", "챕터") or (r["status"] == "간헐" and c.get("since", "0") >= young))]
     watch = sorted(watch, key=lambda x: -x[1]["scoreWeek"])[:4]
     return rows, wk, mo, watch
 
