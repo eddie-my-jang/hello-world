@@ -1002,6 +1002,9 @@ function fmtGen(iso) {{
   return `${{d.getFullYear()}}.${{p(d.getMonth() + 1)}}.${{p(d.getDate())}}(${{W[d.getDay()]}}) ${{p(d.getHours())}}:${{p(d.getMinutes())}}`;
 }}
 function esc(s) {{ return String(s).replace(/[<>&"]/g, (c) => ({{'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}})[c]); }}
+// 요약문은 채팅 메시지와 같이 쓰여 **굵게** 표시가 섞여 온다. 화면에서는 굵게, 복사본에서는 제거.
+function rich(s) {{ return esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }}
+function plain(s) {{ return String(s).replace(/\*\*(.+?)\*\*/g, '$1'); }}
 
 const DAY_ICON = `<svg viewBox="0 0 48 48" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="24" cy="24" r="10" fill="var(--accent)"/>
@@ -1101,7 +1104,7 @@ function renderBrief() {{
   document.getElementById('brief-icon').innerHTML = today ? DAY_ICON : WEEK_ICON;
   document.getElementById('brief-label').textContent = today ? '오늘 전체 요약' : '이번 주 전체 요약';
   const el = document.getElementById('brief-text');
-  el.textContent = (today ? DAILY_SUMMARY : WEEKLY_SUMMARY) || '요약이 아직 없습니다.';
+  el.innerHTML = rich((today ? DAILY_SUMMARY : WEEKLY_SUMMARY) || '요약이 아직 없습니다.');
   el.classList.add('clamp3');
   document.getElementById('brief-more').textContent = '더보기';
 
@@ -1162,7 +1165,7 @@ function renderFeed() {{
           <div class="meta-body">
             <div class="title">${{esc(v.title)}}</div>
             <div class="subline">${{esc(v.channel)}} · ${{fmtViews(v.views)}} · ${{fmtAgo(v.publishedAt)}}</div>
-            ${{v.summary ? `<div class="summary">${{esc(v.summary)}}</div>` : ''}}
+            ${{v.summary ? `<div class="summary">${{rich(v.summary)}}</div>` : ''}}
           </div>
         </div>
       </a>
@@ -1245,10 +1248,10 @@ function nbLink(v) {{ return 'https://youtu.be/' + v.videoId; }}
    줄바꿈·공백·쉼표, watch?v= 형태와 youtu.be 형태를 모두 시도했지만 전부 실패했다. */
 function notebookText(list) {{
   const head = `AI 브리핑 · ${{fmtGen(GENERATED_AT)}} 기준 ${{list.length}}건\\n` +
-    (activeChip === 'today' ? DAILY_SUMMARY : WEEKLY_SUMMARY) + '\\n';
+    plain(activeChip === 'today' ? DAILY_SUMMARY : WEEKLY_SUMMARY) + '\\n';
   const body = list.map((v) =>
     `[${{CATEGORY_LABELS[v.category]}}] ${{v.title}} — ${{v.channel}}\\n` +
-    (v.summary ? v.summary + '\\n' : '') + nbLink(v)).join('\\n\\n');
+    (v.summary ? plain(v.summary) + '\\n' : '') + nbLink(v)).join('\\n\\n');
   return head + '\\n' + body;
 }}
 

@@ -256,6 +256,13 @@ def score(r):
     return round(wk, 2), round(mo, 2)
 
 
+def fresh(r):
+    """정착·퇴조·간헐·잠잠은 배경어다 — 다시 급증(4주 가속 1.3 이상, 이번 주 가중 2 이상)할 때만 후보가 된다."""
+    if r["status"] in ("등장", "부상", "챕터"):
+        return True
+    return r["wNow"] >= 2 and (r["w4"] + 1) / (r["wPrev4"] + 1) >= 1.69
+
+
 def picks(res):
     rows = []
     for c in CONCEPTS:
@@ -263,11 +270,6 @@ def picks(res):
         sw, sm = score(r)
         r["scoreWeek"], r["scoreMonth"] = sw, sm
         rows.append((c, r))
-    # 정착·퇴조·잠잠은 배경어다 — 다시 급증(가속 1.3 이상, 이번 주 가중 2 이상)할 때만 후보가 된다
-    def fresh(r):
-        if r["status"] in ("등장", "부상", "챕터"):
-            return True
-        return r["wNow"] >= 2 and (r["w4"] + 1) / (r["wPrev4"] + 1) >= 1.69
     # 이주: 이번 주 2개 채널 이상 + (지난 2주에도 있었거나, 처음이라면 3개 채널 이상)
     wk_ok = [(c, r) for c, r in rows if fresh(r) and len(r["channelsNow"]) >= 2 and r["wNow"] >= 1.0 and
              (r["weekly"][-2] or r["weekly"][-3] or len(r["channelsNow"]) >= 3)]
@@ -476,7 +478,7 @@ def cmd_apply():
     for v in d["videos"]:
         if pub(v) >= cut:
             today_ids |= {c["id"] for c in CONCEPTS if c["label"] in v["tags"]}
-    daily = sorted([(by_id[i], res[i]) for i in today_ids if res[i]["status"] != "잠잠"],
+    daily = sorted([(by_id[i], res[i]) for i in today_ids if fresh(res[i])],
                    key=lambda x: -x[1]["scoreWeek"])[:3]
     d["dailyKeywords"] = [entry(c, r, hits, "week") for c, r in daily]
     d["weeklyKeywords"] = [entry(c, r, hits, "week") for c, r in wk]
