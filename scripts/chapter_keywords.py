@@ -272,6 +272,13 @@ def fresh(r):
     return r["wNow"] >= 2.5 and (r["w4"] + 1) / (r["wPrev4"] + 1) >= 2.0
 
 
+def stale(c, r):
+    """간헐은 용어가 생긴 지 1년 안 된 것만 후보로 둔다(MCP처럼 오래된 기본어가 띄엄띄엄 나오는 건 주목거리가 아님).
+    이주·이달·오늘도 같다 — 2025년의 바이브 코딩이 지나가는 언급 몇 건으로 '재급증'해 이주 1위가 되던 문제(10-27)."""
+    young = (NOW - timedelta(days=365)).strftime("%Y-%m")
+    return r["status"] == "간헐" and c.get("since", "0") < young
+
+
 def picks(res):
     rows = []
     for c in CONCEPTS:
@@ -279,19 +286,18 @@ def picks(res):
         sw, sm = score(r)
         r["scoreWeek"], r["scoreMonth"] = sw, sm
         rows.append((c, r))
+    rows_ok = [(c, r) for c, r in rows if not stale(c, r)]
     # 이주: 이번 주 2개 채널 이상 + (지난 2주에도 있었거나, 처음이라면 3개 채널 이상)
-    wk_ok = [(c, r) for c, r in rows if fresh(r) and len(r["channelsNow"]) >= 2 and r["wNow"] >= 1.0 and
+    wk_ok = [(c, r) for c, r in rows_ok if fresh(r) and len(r["channelsNow"]) >= 2 and r["wNow"] >= 1.0 and
              (r["weekly"][-2] or r["weekly"][-3] or len(r["channelsNow"]) >= 3)]
     wk = sorted(wk_ok, key=lambda x: -x[1]["scoreWeek"])[:3]
     # 이달: 최근 4주 중 2주 이상 활동 + 3개 채널 이상(가중 합 2 이상)
-    mo_ok = [(c, r) for c, r in rows if fresh(r) and r["active4"] >= 2 and len(r["channels4"]) >= 3 and r["w4"] >= 2]
+    mo_ok = [(c, r) for c, r in rows_ok if fresh(r) and r["active4"] >= 2 and len(r["channels4"]) >= 3 and r["w4"] >= 2]
     mo = sorted(mo_ok, key=lambda x: -x[1]["scoreMonth"])[:3]
     # 주목 후보: 문턱은 못 넘었지만 새로 움직이는 개념(이번 주 언급 + 정착·퇴조 아님)
     taken = {c["id"] for c, _ in wk + mo}
-    # 간헐은 용어가 생긴 지 1년 안 된 것만(MCP처럼 오래된 기본어가 띄엄띄엄 나오는 건 주목거리가 아님)
-    young = (NOW - timedelta(days=365)).strftime("%Y-%m")
     watch = [(c, r) for c, r in rows if c["id"] not in taken and r["channelsNow"] and r["scoreWeek"] >= 0.8 and
-             (r["status"] in ("등장", "부상", "챕터") or (r["status"] == "간헐" and c.get("since", "0") >= young))]
+             (r["status"] in ("등장", "부상", "챕터") or (r["status"] == "간헐" and not stale(c, r)))]
     watch = sorted(watch, key=lambda x: -x[1]["scoreWeek"])[:4]
     return rows, wk, mo, watch
 
@@ -489,7 +495,7 @@ def cmd_apply():
     for v in d["videos"]:
         if pub(v) >= cut:
             today_ids |= {c["id"] for c in CONCEPTS if c["label"] in v["tags"]}
-    daily = sorted([(by_id[i], res[i]) for i in today_ids if fresh(res[i])],
+    daily = sorted([(by_id[i], res[i]) for i in today_ids if fresh(res[i]) and not stale(by_id[i], res[i])],
                    key=lambda x: -x[1]["scoreWeek"])[:3]
     d["dailyKeywords"] = [entry(c, r, hits, "week") for c, r in daily]
     d["weeklyKeywords"] = [entry(c, r, hits, "week") for c, r in wk]
