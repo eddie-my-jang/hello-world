@@ -132,7 +132,7 @@
   {"id":"fde","label":"FDE(전진 배치 엔지니어)","term":"Forward-deployed engineers","kind":"비즈니스 모델","since":"2025-04",
    "def":"엔지니어가 고객사 현장에 상주해 AI를 업무에 꽂아 넣는 팔란티어식 도입 모델 — AI 서비스 회사의 표준 조직",
    "patterns":["forward[- ]deployed engineering","forward[- ]deployed engineers\\b(?!(,| at\\b| lead| manager))","전진 배치 엔지니어","포워드 디플로이드"],
-   "cs":["(?<!Founding )\\bFDEs?\\b(?! (Leader|Lead|Manager|리더|매니저))",
+   "cs":["(?<!Founding )(?<!Global )\\bFDEs?\\b(?! (Leader|Lead|Manager|리더|매니저|/))",
   "(?i:forward[- ]deployed engineer)\\b(?!(,| (?i:at)\\b| (?i:lead)| (?i:manager)| [A-Z][a-z]+ [A-Z][a-z]+))"]},
   {"id":"services_sw","label":"서비스형 소프트웨어","term":"Services-as-software","kind":"비즈니스 모델","since":"2025-03",
    "def":"소프트웨어 좌석이 아니라 일의 결과(서비스)를 파는 AI 회사 모델과 성과 기반 과금",
