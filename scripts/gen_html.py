@@ -1,6 +1,7 @@
 import json, base64
 
 import os
+from datetime import datetime, timedelta
 # 스크래치패드 절대경로. 트리거 실행 시 YT_SCRATCH로 넘겨준다.
 SCR = os.environ["YT_SCRATCH"]
 
@@ -49,6 +50,11 @@ watch_keywords_json = json.dumps(watch_keywords, ensure_ascii=False)
 concept_index_json = json.dumps(concept_index, ensure_ascii=False)
 monthly_history_json = json.dumps(monthly_history, ensure_ascii=False)
 chapter_timeline_json = json.dumps(chapter_timeline, ensure_ascii=False)
+# 앱은 쓰지 않음 — 스크래치패드 유실 시 digest_data.json의 excluded를 라이브 HTML에서 복구하기 위한 사본
+# (7일 창 판단에만 쓰이므로 generatedAt 기준 10일 이내 항목만 실음)
+_ex_cut = (datetime.fromisoformat(generated_at.replace("Z", "+00:00")) - timedelta(days=10)).isoformat().replace("+00:00", "Z")
+excluded_json = json.dumps([v for v in digest.get("excluded", []) if v.get("publishedAt", "") >= _ex_cut],
+                           ensure_ascii=False).replace("</", "<\\/")
 
 html = f"""<title>AI 브리핑 · 화학전지사업부</title>
 <style>
@@ -932,6 +938,7 @@ const DAILY_KEYWORDS = {daily_keywords_json};
 const WEEKLY_KEYWORDS = {weekly_keywords_json};
 const MONTHLY_KEYWORDS = {monthly_keywords_json};
 const WATCH_KEYWORDS = {watch_keywords_json};
+const EXCLUDED = {excluded_json};
 const CONCEPT_INDEX = {concept_index_json};
 const MONTHLY_HISTORY = {monthly_history_json};
 const CHAPTER_TIMELINE = {chapter_timeline_json};

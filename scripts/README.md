@@ -23,6 +23,17 @@ python3 scripts/chapter_keywords.py mine 14        # 사전 밖 신규 용어 �
 python3 scripts/gen_html.py                        # ai_briefing.html 생성
 ```
 
+## AI 무관 영상 제외 (2026-11-09)
+
+사용자 요청으로 AI와 전혀 관계없는 영상(All-In 정치 클립, Dwarkesh 역사 회차, a16z 건강 회차 등)은 앱·다이제스트에서 뺀다.
+판단은 트리거 실행 시 분류 단계(b)에서 하고, 결과는 `digest_data.json`의 `excluded` 배열에
+`{videoId, channel, title, publishedAt, reason}`으로 남긴다. 지식인사이드는 비AI 교양 채널로 일부러 넣었으므로 예외.
+
+- `fetch_week.py` — `excluded`에 있는 ID를 7일 창에서 빼서 매일 다시 판단하지 않게 함.
+- `check_daily.py` — `excluded`도 PREV에 넣어 신규로 다시 잡지 않음.
+- `gen_html.py` — generatedAt 기준 10일 이내 `excluded`를 `const EXCLUDED`로 HTML에 실음(앱은 안 씀).
+  스크래치패드가 날아가면 다른 const들과 같은 방식으로 이 줄을 뽑아 `excluded`를 복구.
+
 ## chapter_keywords.py — 이주의 키워드 / 이달의 키워드 (2026-10-22 개편)
 
 목표는 "많이 언급된 범주"가 아니라 **새 챕터를 연 이름 붙은 개념**을 고르는 것입니다.

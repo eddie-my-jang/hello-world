@@ -11,7 +11,10 @@ SCR = os.environ["YT_SCRATCH"]
 API_KEY = os.environ["YT_API_KEY"]
 CUT = datetime.now(timezone.utc) - timedelta(days=7)
 
-CHANS = json.load(open(f"{SCR}/digest_data.json"))["channels"]
+_D = json.load(open(f"{SCR}/digest_data.json"))
+CHANS = _D["channels"]
+# AI와 무관해 제외하기로 이미 판단한 영상(2026-11-09 사용자 요청) — 7일 창에서 빼서 재판단·재노출을 막음
+EXCL = {v["videoId"] for v in _D.get("excluded", [])}
 
 def fetch(pl, n, token=None):
     u = ("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails"
@@ -64,6 +67,10 @@ for c in CHANS:
     print(f"{c['name']:28} {len(got)}")
     allv += got
 
+n_ex = sum(1 for v in allv if v["videoId"] in EXCL)
+allv = [v for v in allv if v["videoId"] not in EXCL]
+if n_ex:
+    print(f"(AI 무관 제외 목록에 있어 뺀 영상 {n_ex}건)")
 allv.sort(key=lambda v: v["publishedAt"], reverse=True)
 json.dump(allv, open(f"{SCR}/week_videos_raw.json", "w"), ensure_ascii=False, indent=1)
 print("TOTAL", len(allv))

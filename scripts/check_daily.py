@@ -32,7 +32,9 @@ def scan(items, last):
         out.append({"videoId": vid, "title": s["title"], "publishedAt": s["publishedAt"]})
     return out, found
 try:
-    PREV = {v["videoId"] for v in json.load(open("digest_data.json"))["videos"]}
+    _D = json.load(open("digest_data.json"))
+    # excluded: AI와 무관해 앱·다이제스트에서 뺀 영상(2026-11-09 사용자 요청). 이미 판단했으므로 신규로 다시 잡지 않음
+    PREV = {v["videoId"] for v in _D["videos"]} | {v["videoId"] for v in _D.get("excluded", [])}
 except Exception:
     PREV = set()
 CUT2 = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat().replace("+00:00","Z")
