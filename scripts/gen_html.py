@@ -53,6 +53,10 @@ chapter_timeline_json = json.dumps(chapter_timeline, ensure_ascii=False)
 # 앱은 쓰지 않음 — 스크래치패드 유실 시 digest_data.json의 excluded를 라이브 HTML에서 복구하기 위한 사본
 # (7일 창 판단에만 쓰이므로 generatedAt 기준 10일 이내 항목만 실음)
 _ex_cut = (datetime.fromisoformat(generated_at.replace("Z", "+00:00")) - timedelta(days=10)).isoformat().replace("+00:00", "Z")
+# 상세 브리핑(2026-11-09 사용자 요청: "오늘 전체 요약을 10배 정도 자세히").
+# 구조: {headline, tldr[], sections[{title, body, videos[]}], numbers[{value, desc, videoId}], implications[], watch[]}
+daily_briefing_json = json.dumps(digest.get("dailyBriefing"), ensure_ascii=False).replace("</", "<\\/")
+weekly_briefing_json = json.dumps(digest.get("weeklyBriefing"), ensure_ascii=False).replace("</", "<\\/")
 excluded_json = json.dumps([v for v in digest.get("excluded", []) if v.get("publishedAt", "") >= _ex_cut],
                            ensure_ascii=False).replace("</", "<\\/")
 
@@ -523,6 +527,52 @@ body {{
   cursor: pointer;
 }}
 
+.brief-actions {{ display: flex; align-items: center; gap: 14px; margin-top: 7px; }}
+.brief-actions .brief-more {{ margin-top: 0; }}
+.brief-deep {{
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+  padding: 5px 12px;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}}
+.brief-deep[hidden] {{ display: none; }}
+
+/* ---------- 상세 브리핑 시트 ---------- */
+.sheet.tall {{ max-height: 92vh; }}
+.bf-date {{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; color: var(--accent-strong); font-weight: 600; text-transform: uppercase; }}
+.bf-head {{ margin: 6px 0 14px; font-size: 18px; line-height: 1.4; font-weight: 600; color: var(--ink); }}
+.bf-sec {{ margin: 18px 0 8px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }}
+.bf-tldr {{ margin: 0; padding: 12px 14px 12px 30px; border-radius: 12px; background: var(--surface); }}
+.bf-tldr li {{ font-size: 13.5px; line-height: 1.55; margin: 2px 0; color: var(--ink); }}
+.bf-topic {{ padding: 12px 0 14px; border-bottom: 1px solid var(--line); }}
+.bf-topic:last-child {{ border-bottom: none; }}
+.bf-topic h3 {{ margin: 0 0 6px; font-size: 14.5px; line-height: 1.4; font-weight: 600; }}
+.bf-topic h3 .no {{ color: var(--accent-strong); margin-right: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }}
+.bf-body {{ margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--ink); white-space: pre-line; }}
+.bf-vids {{ display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }}
+.bf-vid {{
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px; border-radius: 9px; background: var(--surface);
+  color: var(--ink); text-decoration: none; min-width: 0;
+}}
+.bf-vid .av {{ width: 22px; height: 22px; font-size: 10.5px; flex: none; }}
+.bf-vid .t {{ flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+.bf-vid .c {{ flex: none; font-size: 11px; color: var(--ink-dim); max-width: 34%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+.bf-nums {{ display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface); }}
+.bf-nums dt {{ font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent-strong); white-space: nowrap; }}
+.bf-nums dd {{ margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink); }}
+.bf-nums dd a {{ color: var(--ink-dim); }}
+.bf-list {{ margin: 0; padding-left: 20px; }}
+.bf-list li {{ font-size: 13.5px; line-height: 1.6; margin: 4px 0; color: var(--ink); }}
+.bf-foot {{ margin-top: 18px; display: flex; gap: 8px; }}
+.bf-foot .btn {{ flex: 1; }}
+.btn.ghost {{ background: var(--surface); color: var(--ink); }}
+
 .clamp3 {{
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -870,7 +920,10 @@ body {{
     <div class="brief-label" id="brief-label"></div>
     <div class="kw-row" id="brief-keywords"></div>
     <div class="brief-text clamp3" id="brief-text"></div>
-    <button class="brief-more" id="brief-more">더보기</button>
+    <div class="brief-actions">
+      <button class="brief-more" id="brief-more">더보기</button>
+      <button class="brief-deep" id="brief-deep" hidden>상세 브리핑 ›</button>
+    </div>
   </div>
 </section>
 
@@ -902,6 +955,17 @@ body {{
   <dl class="ev-grid" id="ev-grid"></dl>
   <div class="ev-srcs" id="ev-src-wrap"></div>
   <p class="ev-note">키워드는 이름 붙은 개념 사전(약 60개)에서만 뽑습니다. '보안·평가·거버넌스' 같은 범주어는 사전에 넣지 않습니다. 추적 채널의 2025년 1월 이후 전체 영상을 주 단위로 세어, 몇 달 공백 뒤 여러 채널에서 동시에 나타나 몇 주 이상 이어지는 개념을 새 챕터로 봅니다. 업로드가 많은 채널(컨퍼런스·뉴스)의 언급은 덜 세고, 드와케쉬·노정석 등 생각 리더 채널은 더 셉니다. 영상 설명·제목만 보므로 대화 속에서만 나온 말은 잡히지 않습니다.</p>
+</div>
+
+<div class="sheet tall" id="bf-sheet" hidden>
+  <div class="grabber"></div>
+  <div class="bf-date" id="bf-date"></div>
+  <h2 class="bf-head" id="bf-head"></h2>
+  <div id="bf-content"></div>
+  <div class="bf-foot">
+    <button class="btn ghost" id="bf-close">닫기</button>
+    <button class="btn" id="bf-copy">브리핑 복사</button>
+  </div>
 </div>
 
 <div class="sheet" id="tl-sheet" hidden>
@@ -939,6 +1003,8 @@ const WEEKLY_KEYWORDS = {weekly_keywords_json};
 const MONTHLY_KEYWORDS = {monthly_keywords_json};
 const WATCH_KEYWORDS = {watch_keywords_json};
 const EXCLUDED = {excluded_json};
+const DAILY_BRIEFING = {daily_briefing_json};
+const WEEKLY_BRIEFING = {weekly_briefing_json};
 const CONCEPT_INDEX = {concept_index_json};
 const MONTHLY_HISTORY = {monthly_history_json};
 const CHAPTER_TIMELINE = {chapter_timeline_json};
@@ -1114,6 +1180,7 @@ function renderBrief() {{
   el.innerHTML = rich((today ? DAILY_SUMMARY : WEEKLY_SUMMARY) || '요약이 아직 없습니다.');
   el.classList.add('clamp3');
   document.getElementById('brief-more').textContent = '더보기';
+  document.getElementById('brief-deep').hidden = !(today ? DAILY_BRIEFING : WEEKLY_BRIEFING);
 
   const box = document.getElementById('brief-keywords');
   box.innerHTML = '';
@@ -1295,6 +1362,7 @@ const promptSheet = document.getElementById('prompt-sheet');
 const chSheet = document.getElementById('ch-sheet');
 const evSheet = document.getElementById('ev-sheet');
 const tlSheet = document.getElementById('tl-sheet');
+const bfSheet = document.getElementById('bf-sheet');
 const promptBtn = document.getElementById('prompt-btn');
 
 function closeSheets() {{
@@ -1303,6 +1371,7 @@ function closeSheets() {{
   chSheet.hidden = true;
   evSheet.hidden = true;
   tlSheet.hidden = true;
+  bfSheet.hidden = true;
   promptBtn.setAttribute('aria-expanded', 'false');
 }}
 scrim.onclick = closeSheets;
@@ -1361,6 +1430,76 @@ function openEvidence(label) {{
   scrim.hidden = false;
   evSheet.hidden = false;
 }}
+
+/* ---------- 상세 브리핑 ---------- */
+const VID_BY_ID = new Map(VIDEOS.map((v) => [v.videoId, v]));
+let bfPlain = '';
+
+function bfVideo(id) {{
+  const v = VID_BY_ID.get(id);
+  if (!v) return '';
+  return `<a class="bf-vid" href="${{esc(v.link)}}" target="_blank" rel="noopener">` +
+    `<span class="av" style="background:${{avColor(v.channel)}}">${{esc(initials(v.channel))}}</span>` +
+    `<span class="t">${{esc(v.title)}}</span><span class="c">${{esc(v.channel)}}</span></a>`;
+}}
+
+function openBriefing() {{
+  const today = activeChip === 'today';
+  const b = today ? DAILY_BRIEFING : WEEKLY_BRIEFING;
+  if (!b) return;
+  closeSheets();
+  const when = fmtGen(GENERATED_AT).split(' ')[0];
+  const label = today ? `오늘 상세 브리핑 · ${{when}}` : `이번 주 상세 브리핑 · ${{when}}까지 7일`;
+  document.getElementById('bf-date').textContent = label;
+  document.getElementById('bf-head').innerHTML = rich(b.headline || '');
+  const out = [];
+  const txt = [label, plain(b.headline || ''), ''];
+  if ((b.tldr || []).length) {{
+    out.push('<div class="bf-sec">핵심 요약</div><ul class="bf-tldr">' +
+      b.tldr.map((t) => `<li>${{rich(t)}}</li>`).join('') + '</ul>');
+    txt.push('[핵심 요약]', ...b.tldr.map((t) => '- ' + plain(t)), '');
+  }}
+  if ((b.sections || []).length) {{
+    out.push('<div class="bf-sec">주제별 정리</div>');
+    b.sections.forEach((sec, i) => {{
+      out.push(`<div class="bf-topic"><h3><span class="no">${{String(i + 1).padStart(2, '0')}}</span>${{esc(sec.title)}}</h3>` +
+        `<p class="bf-body">${{rich(sec.body || '')}}</p>` +
+        `<div class="bf-vids">${{(sec.videos || []).map(bfVideo).join('')}}</div></div>`);
+      txt.push(`[${{i + 1}}. ${{sec.title}}]`, plain(sec.body || ''));
+      for (const id of sec.videos || []) {{
+        const v = VID_BY_ID.get(id);
+        if (v) txt.push(`  · ${{v.title}} (${{v.channel}}) ${{v.link}}`);
+      }}
+      txt.push('');
+    }});
+  }}
+  if ((b.numbers || []).length) {{
+    out.push('<div class="bf-sec">인용할 숫자</div><dl class="bf-nums">' + b.numbers.map((n) => {{
+      const v = n.videoId && VID_BY_ID.get(n.videoId);
+      return `<dt>${{esc(n.value)}}</dt><dd>${{rich(n.desc || '')}}` +
+        (v ? ` <a href="${{esc(v.link)}}" target="_blank" rel="noopener">· ${{esc(v.channel)}}</a>` : '') + '</dd>';
+    }}).join('') + '</dl>');
+    txt.push('[인용할 숫자]', ...b.numbers.map((n) => `- ${{n.value}}: ${{plain(n.desc || '')}}`), '');
+  }}
+  if ((b.implications || []).length) {{
+    out.push('<div class="bf-sec">화학전지사업부 시사점</div><ul class="bf-list">' +
+      b.implications.map((t) => `<li>${{rich(t)}}</li>`).join('') + '</ul>');
+    txt.push('[화학전지사업부 시사점]', ...b.implications.map((t) => '- ' + plain(t)), '');
+  }}
+  if ((b.watch || []).length) {{
+    out.push('<div class="bf-sec">다음에 지켜볼 것</div><ul class="bf-list">' +
+      b.watch.map((t) => `<li>${{rich(t)}}</li>`).join('') + '</ul>');
+    txt.push('[다음에 지켜볼 것]', ...b.watch.map((t) => '- ' + plain(t)));
+  }}
+  document.getElementById('bf-content').innerHTML = out.join('');
+  bfPlain = txt.join('\\n').trim();
+  scrim.hidden = false;
+  bfSheet.hidden = false;
+  bfSheet.scrollTop = 0;
+}}
+document.getElementById('brief-deep').onclick = openBriefing;
+document.getElementById('bf-close').onclick = closeSheets;
+document.getElementById('bf-copy').onclick = () => copyText(bfPlain, '브리핑 복사됨');
 
 function openTimeline() {{
   closeSheets();

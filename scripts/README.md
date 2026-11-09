@@ -23,6 +23,26 @@ python3 scripts/chapter_keywords.py mine 14        # 사전 밖 신규 용어 �
 python3 scripts/gen_html.py                        # ai_briefing.html 생성
 ```
 
+## 상세 브리핑 (2026-11-09)
+
+사용자 요청("오늘 전체 요약을 10배 정도 자세히")으로 요약 카드에 **상세 브리핑 ›** 버튼과 전용 시트를 추가했다.
+데이터는 트리거가 d단계에서 `digest_data.json`에 직접 쓴다(스크립트가 만들지 않음).
+
+```
+dailyBriefing / weeklyBriefing = {
+  "headline": "한 줄 결론",
+  "tldr": ["핵심 3~6개"],
+  "sections": [{"title": "...", "body": "문단(\\n\\n 구분, **굵게** 허용)", "videos": ["videoId", ...]}],
+  "numbers": [{"value": "36%→98%", "desc": "...", "videoId": "..."}],
+  "implications": ["화학전지사업부 시사점"],
+  "watch": ["다음에 지켜볼 것"]
+}
+```
+
+- 칩이 '오늘'이면 dailyBriefing, 그 외에는 weeklyBriefing을 연다. 해당 필드가 없으면 버튼이 숨는다.
+- `videos`·`numbers.videoId`는 VIDEOS 안의 ID만 카드로 그린다(없는 ID는 조용히 건너뜀).
+- 시트의 '브리핑 복사'는 링크를 포함한 일반 텍스트로 복사한다.
+
 ## AI 무관 영상 제외 (2026-11-09)
 
 사용자 요청으로 AI와 전혀 관계없는 영상(All-In 정치 클립, Dwarkesh 역사 회차, a16z 건강 회차 등)은 앱·다이제스트에서 뺀다.
